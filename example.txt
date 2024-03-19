@@ -1,0 +1,2224 @@
+Belief Change based on Knowledge Measures
+Umberto Stracciaa, Giovanni Casinia,b
+aIstituto di Scienza e Tecnologie dell’Informazione, CNR, Pisa, Italy
+bCAIR,University of Cape Town, Cape Town, South Africa
+Abstract
+Knowledge Measures (KMs) [1] aim at quantifying the amount of knowl-
+edge/information that a knowledge base carries. On the other hand, Belief
+Change (BC) [2, 3] is the process of changing beliefs (in our case, in terms
+of contraction, expansion and revision) taking into account a new piece of
+knowledge, which possibly may be in contradiction with the current belief.
+We propose a new quantitative BC framework that is based on KMs by
+defining belief change operators that try to minimise, from an information-
+theoretic point of view, the surprise that the changed belief carries. To this
+end, we introduce the principle of minimal surprise.
+In particular, our contributions are (i) a general information theoretic
+approach to KMs for which [1] is a special case; (ii) KM-based BC operators
+that satisfy the so-called AGM postulates; and (iii) a characterisation of any
+BC operator that satisfies the AGM postulates as a KM-based BC operator,
+i.e., any BC operator satisfying the AGM postulates can be encoded within
+our quantitative BC framework. We also introduce quantitative measures
+that account for the information loss of contraction, information gain of ex-
+pansion and information change of revision. We also give a succinct look
+into the problem of iterated revision [4], which deals with the application of
+a sequence of revision operations in our framework, and also illustrate how
+one may build from our KM-based contraction operator also one not satis-
+fying the (in)famous recovery postulate, by focusing on the so-called severe
+withdrawal [5] model as illustrative example.
+Keywords:
+Belief change, knowledge measures, information theory
+Preprint submitted to ArXiv
+March 18, 2024
+arXiv:2403.10502v1  [cs.AI]  15 Mar 2024
+1. Introduction
+A knowledge base (KB) is the main ingredient of a knowledge-based system
+(KBS), whose aim is to use its KB to reason with and make decisions within
+a specific application domain.
+A KB essentially represents facts, usually
+represented via a formal logic, about a specific application domain.
+Knowledge Measures (KMs) [1] aim at quantifying the amount of knowl-
+edge/information/surprise that a knowledge base carries and, thus, a KBS
+contains. To do so, a set of axioms have been defined for classical proposi-
+tional logic that are believed KMs should satisfy. In [1] various contexts have
+been suggested for which KMs may be useful, among them Belief Change
+(BC) [2, 3], which is the process of changing beliefs of a KBS (the facts about
+the world that a KBS knows) taking into account a new piece of knowledge
+that possibly may be in contradiction with the current belief. To do so, var-
+ious postulates have been defined, e.g. the so-called AGM postulates, that
+are believed BCs operators should satisfy.
+Contribution. We propose here a quantitative BC model that is based on
+KMs: roughly, we define belief change operators that try to minimise the
+amount of surprise of the changed belief.
+To this end, we introduce the
+principle of minimal surprise. In particular, our contributions are the fol-
+lowing: (i) we present a general information theoretic approach to KMs, for
+which [1] is a special case, that will be propaedeutic for BC; (ii) we then pro-
+pose KM-based BC operators that satisfy the AGM postulates; (iii) we show
+that any BC operator that satisfies the AGM postulates can be represented
+as a KM-based BC operator. We also introduce quantitative measures that
+account for the information loss of contraction, information gain of expan-
+sion and information change of revision. We also start investigating Iterated
+Belief Revision (IBR) [4] and show that our revision process satisfies three
+of the four postulates of iterated belief revision [4], and also illustrate how
+one may build from our KM-based contraction operator also one not satis-
+fying the (in)famous recovery postulate, by focusing on the so-called severe
+withdrawal [5] model as illustrative example.
+We proceed as follows. In the next section, we introduce the background
+notions we will rely on. In section 3, we will recap KMs and propose a more
+general information-theoretic version. In section 4 we will show how one may
+formulate BC using KMs, illustrate succinctly IBR and sever withdrawal
+within our framework. Eventually, section 5 summarises our contribution,
+2
+succinctly addresses related work and proposes topics for future work. Some
+proof can be found in the appendix.
+2. Background
+Let Σ = {p, q, . . .} be a finite non-empty set of propositional letters (all
+symbols may have an optional sup-, or sub-script or apex). LΣ = {α, β, . . .}
+is the set of propositional formulae based on the set of Boolean operators
+{∧, ∨, ¬, →, ↔} and Σ. A literal (denoted L) is either a propositional letter
+or its negation and with ¯L we denote ¬p (resp. p) if L = p (resp. if L = ¬p).
+A knowledge base (KB) K = {ϕ1, . . . , ϕn} is a finite set of formulae ϕi and
+with V K we denote the formula V
+ϕ∈K ϕ.
+In the following, whenever we
+write K, we consider V K instead, unless stated otherwise. Given a formula
+ϕ, with Σϕ ⊆ Σ we denote the set of propositional letters occurring in ϕ (we
+may omit the reference to Σ if no ambiguity arises). We define the length
+of ϕ, denoted |ϕ|, inductively as usual: for p ∈ Σ, |p| = 1, ¬ϕ = 1 + |ϕ|,
+|ϕ ∨ ψ| = |ϕ ∧ ψ| = |ϕ → ψ| = |ϕ ↔ ψ| = 1 + |ϕ| + |ψ|.
+An interpretation, or world, w w.r.t. Σ is a set of literals such that all
+propositional letters in Σ occur exactly once in w. WΣ is the set of all worlds
+w.r.t. Σ. We may also denote a world w as the concatenation of the literals
+occurring in w by replacing a negative literal ¬p with ¯p (e.g. {¬p, q} may be
+denoted also as ¯pq).
+With w ⊩ ϕ we indicate that the world w satisfies the formula ϕ, i.e. w
+is a model of ϕ, which is inductively defined as usual: w ⊩ L iff L ∈ w,
+w ⊩ ¬ϕ iff w ̸⊩ ϕ, w ⊩ ϕ ∧ ψ iff w ⊩ ϕ and w ⊩ ψ, w ⊩ ϕ ∨ ψ iff w ⊩ ϕ
+or w ⊩ ψ, w ⊩ ϕ → ψ iff w ⊩ ¬ϕ ∨ ψ, and eventually w ⊩ ϕ ↔ ψ iff
+w ⊩ (ϕ → ψ) ∧ (ψ → ϕ). Furthermore, ϕ is satisfiable (resp. unsatisfiable) if
+it has (resp. has no) model. We will also use two special symbols ⊥ and ⊤:
+⊥ is the formula without models, while every world satisfies ⊤. We impose
+that ⊤ (resp. ⊥) cannot occur in any other formula different than ⊤ (resp. ⊥)
+itself. Given formulae ϕ and ψ, let [ϕ]Σ be the set of models of ϕ w.r.t. Σ;
+define ϕ ⊨ ψ iff [ϕ]Σ ⊆ [ψ]Σ, and ϕ and ψ equivalent, denoted ϕ ≡ ψ, iff
+[ϕ]Σ = [ψ]Σ.
+Remark 1. In the following, w.l.o.g., for any set of formulae S = {ϕ1, ϕ2, . . .},
+we always assume that ϕi ̸≡ ϕj for each i ̸= j. As a consequence, we always
+have |S| ≤ 22|Σ|.
+3
+Also, let (i) ϕ ≤ ψ iff ϕ ⊨ ψ; and (ii) ϕ<ψ iff ϕ ⊨ ψ and ψ ̸⊨ ϕ. For w ∈ WΣ,
+let
+𭟋w =
+^
+L∈w
+L ,
+(1)
+and for W ⊆ WΣ, let
+𭟋W =
+_
+w∈W
+𭟋w ,
+(2)
+were 𭟋∅ = ⊥ and 𭟋WΣ = ⊤. Note that
+ϕ ≡ 𭟋[ϕ]Σ .
+(3)
+Remark 2. Consider an alphabet ¯Σ ⊆ Σ and a world ¯w ∈ W¯Σ over ¯Σ. Let
+m = |¯Σ|, n = |Σ| and k = |Σ \ ¯Σ| = n − m. Of course, there are 2k ways to
+extend the world ¯w over ¯Σ into a world w over Σ (for each p ∈ Σ \ ¯Σ add
+either p or ¬p to ¯w). With ⟨ ¯w⟩Σ we will denote the set of such extensions,
+i.e.
+⟨ ¯w⟩Σ = {w ∈ WΣ | ¯w ⊆ w} .
+(4)
+Of course, |⟨ ¯w⟩Σ| = 2|Σ\¯Σ| = 2k and
+𭟋 ¯w ≡ 𭟋⟨ ¯w⟩Σ .
+(5)
+Remark 3. We anticipate (see next section) that we consider a formula ϕ
+as a formal, possibly incomplete, specification of an actual world w and the
+only constraint we impose on ϕ is that w is one of the models of ϕ, without
+knowing who it is. Clearly, the more models ϕ has the less we know about
+the actual word w.
+Example 1 (Running example). Consider the following KB about ‘birds’
+over Σ = {b, p, o, f, w}, where b, p, o, f and w stand for ‘bird’, ‘penguin’,
+‘ostrich’, ‘flies’ and ‘wings’, respectively. The KB
+K = {b, b → f, p → b, o → b, ¬(p ∧ o)}
+states that we believe that there are birds and that they fly. Also, a penguin
+is a bird, and an ostrich is a bird, but a penguin cannot be an ostrich and
+vice-versa. The set of models [K]Σ of K over Σ is
+[K]Σ = {bp¯ofw, b¯pofw, b¯p¯ofw, bp¯of ¯w, b¯pof ¯w, b¯p¯of ¯w}
+4
+It is reasonable to assume that, for any strict subset S ⊂ [K]Σ (resp. strict
+superset S ⊃ [K]Σ), the formula 𭟋S encodes more (resp. less) ‘information’
+about the actual world than K (see the discussion about Axiom (E) in Section
+3.1).
+3. An information-theoretic approach to knowledge measures
+In this section, we first recap succinctly the notion of knowledge measures
+(KMs) according to [1] and then propose a generalisation of it based on
+Shannon’s information theory (see, e.g. [6]).
+3.1. Knowledge measures recap
+To start with, given an alphabet Σ, a substitution θ is a set θ = {p1/L1, . . .,
+p|Σ|/L|Σ|} such that each propositional letter in Σ occurs exactly once in
+{p1, . . . p|Σ|} as well as in {L1, . . . L|Σ|}. The intuition is that propositional
+letters may be renamed by literals. With (i) wθ we indicate the interpretation
+obtained from w by replacing every occurrence of pi in w with Li (with
+the convention that double negations are normalised1); and (ii) for a set of
+interpretations W, with Wθ we denote the set Wθ = {wθ | w ∈ W}. If
+W1 and W2 are two sets of interpretations, we write W1 ≤s W2 if there is
+a substitution θ such that W1θ ⊆ W2. If the subset relation is strict, we
+write W1 <s W2. Furthermore, we say that a formula ϕ s-entails a formula
+ψ, denoted ϕ ≤s ψ, if [ϕ]Σ ≤s [ψ]Σ holds. We write ϕ <s ψ if ϕ ≤s ψ and
+ψ ̸≤s ϕ.2 Note that if ϕ |= ψ then ϕ ≤s ψ, but not vice-versa [1]. We also
+write ϕ ≡s ψ if ϕ ≤s ψ and ψ ≤s ϕ hold.
+Example 2 ([1]). It is easily verified that using substitution θ = {p/¯q, q/p},
+p ≤s ¯q, but p ̸≤ ¯q, i.e. p ̸|= ¯q. Similarly, it is easily verified that ¯q ≤s p and,
+thus, p ≡s ¯q.
+We anticipate that the intuition behind s-entailment is to account for the
+idea that all propositional literals carry the same ‘amount of information’.
+For instance, in Example 2 above, p and ¯q will carry the same amount of
+information as p ≡s ¯q [1].
+Now, there are three simple principles KMs rely on (cf. Remark 3).
+1¬¬p 7→ p.
+2We use the same relation symbol whether ranging over sets of interpretations or for-
+mulae. We will disambiguate it whenever required.
+5
+1. A formula ϕ is considered as a formal specification of the actual world,
+which is one of the models of ϕ.
+2. The more ϕ entails the more ϕ knows about the actual world.
+3. The more models a formula has, the more uncertain we are about which
+is the actual world, which in turn means the less we know about the
+actual world.
+These principles led to the following four axioms for KMs [1]. A KM κ is a
+function mapping formulae into R+ ∪ {0, ∞} satisfying:
+(T): κ(⊤) = 0 and κ(⊥) = ∞;
+(E): if ϕ ◁s ψ then κ(ψ) ◁ κ(ϕ), for ◁∈ {≤, <}.
+(L): κ(ϕ) does depend on Σϕ only.
+(M): if ϕ is satisfiable then
+1. 0 ≤ κ(ϕ) ≤ |Σϕ|; and
+2. if |[ϕ]Σϕ| = 1 then κ(ϕ) = |Σϕ|.
+Let us briefly explain the above (TELM) axioms.
+Concerning axiom (E), assume ϕ |= ψ. Then ϕ has fewer models than ψ,
+which means that there is less uncertainty about which is the actual model
+for ϕ compared to ψ. Moreover, whatever is entailed by ψ is also entailed by
+ϕ. Combining the two facts means that ϕ represents more information about
+what is the actual world than ψ. Concerning s-entailment, e.g. for ϕ := p
+and ψ := q neither ϕ |= ψ nor ψ |= ϕ hold. But, according to axiom (E),
+we have that κ(ϕ) = κ(ψ) instead, i.e. p and q carry the same amount of
+knowledge: that is, according to [1], a KM is insensitive to symbol names,
+i.e. a symbol p carries as much knowledge as another symbol q.
+Concerning axiom (T), note that if |= ϕ then for every formula ψ, we
+have that ψ |= ϕ and, thus, by axiom (E) κ(ψ) ≥ κ(ϕ) has to hold, i.e. κ(ϕ)
+has to be as small as possible, which motivates κ(ϕ) = 0. Analogously, if
+ϕ is unsatisfiable then for every formula ψ, we have that ϕ |= ψ and, thus,
+by axiom (E) κ(ϕ) ≥ κ(ψ) has to hold. That is, κ(ϕ) has to be as large as
+possible, which motivates κ(ϕ) = ∞.
+Concerning axiom (L), this axiom says that, to what concerns KMs, we
+may restrict our attention to Σϕ, i.e. the set of all propositional letters occur-
+ring in a formula ϕ and, thus, symbols not occurring in ϕ do not contribute
+6
+to represent additional information. Note, however, that such an assump-
+tion may not be considered valid e.g. under the Closed World Assumption
+(CWA) [7], where the truth of a letter not occurring in a formula is always
+false.
+Concerning axiom (M), this axiom tells us that KMs are bounded in the
+sense that a satisfiable formula may not represent more information than the
+number of symbols it relies on and the bound is reached only if the formula
+exactly describes the actual world.
+It has been shown in [1] that a KM satisfying the axioms above is
+κh(ϕ) = |Σϕ| − log2 |[ϕ]Σϕ|
+(6)
+where κh(ϕ) = ∞, if ϕ is not satisfiable.
+Example 3 (Running example cont.). Consider the KB K in Example 1.
+Then we have ΣK = {b, p, o, f}, and [K]ΣK = {bp¯of, b¯pof, b¯p¯of} and, thus,
+κh(K) = 4 − log2 3 ≈ 2.415 .
+3.2. An information-theoretic approach to knowledge measures
+We next show how we are going to generalise the above notion of KMs.
+Specifically, we revert to the well-known notion of information theory (see,
+e.g. [6]), where the core idea is that the ‘informational value’ of a communi-
+cated message (in our case a formula) depends on the degree to which the
+content of the message is surprising. If a highly likely event occurs, i.e. the
+probability of a formula is high, the message carries very little information.
+On the other hand, if a highly unlikely event occurs, the message is much
+more informative.
+As before, we still assume that one of the worlds is the actual world
+and we may be uncertain about which one it is exactly. However, now a
+probability distribution over the worlds is given. Of course, the assumption
+underlying the characterisation of KM proposed in [1] is that of a uniform
+probability distribution as each world is equally plausible.
+Formally, consider an alphabet ¯Σ ⊆ Σ. We will assume that a probabil-
+ity distribution P¯Σ over the worlds in W¯Σ, P¯Σ : W¯Σ 7→ [0, 1] is given. The
+intended meaning of P¯Σ(w) is to indicate how probable it is that w is in-
+deed the actual world. A world w is possible, if it has non-zero probability,
+i.e. P¯Σ(w) > 0. For ease of presentation, if no ambiguity arises, we may
+7
+also denote P¯Σ(w) = n as wn and, thus, e.g. may simply write w0.6 in place
+of P¯Σ(w) = 0.6. So, we may also write P¯Σ as a set {wp1
+1 , . . . , wpk
+k }, where
+P¯Σ(wi) = pi, and the convention that worlds not occurring in that set have
+0 probability. The uniform probability distribution is, of course, defined as
+Pu
+¯Σ( ¯w) = 1/|W¯Σ|.
+Now, the probability that one of the models of ϕ is indeed the actual
+world, called the probability of a formula ϕ w.r.t. the alphabet ¯Σ, denoted
+P¯Σ(ϕ), is defined as
+P¯Σ(ϕ)
+=
+X
+¯w∈[ϕ]¯Σ
+P¯Σ( ¯w) .
+(7)
+Note that P¯Σ(⊤) = 1, P¯Σ(⊥) = 0 and, if P¯Σ is the uniform probability
+distribution, then P¯Σ(ϕ) = |[ϕ]¯Σ|/|W¯Σ|.
+We may also simply write ϕp in
+place of P¯Σ(ϕ) = p if clear from the context. With [ϕ]+
+¯Σ we denote the set of
+possible models of ϕ, i.e. the set of models of ϕ that have non-zero probability:
+i.e.
+[ϕ]+
+¯Σ = {w ∈ W¯Σ | w |= ϕ and P¯Σ(w) > 0} .
+Remark 4. Please note that two formulae ϕ and ψ, aimed at describing
+information about the actual world (i.e. one of the worlds in WΣ), share
+the same probability distribution PΣ over worlds. The latter will induce a
+probability PΣ(ϕ) (resp. PΣ(ψ)) indicating how likely one of the models of ϕ
+(resp. ψ) is indeed the actual world. This will then allow us to compare the
+amount of information encoded by ϕ and ψ on equal terms, i.e. based on the
+same probability distribution.
+Note also that a formula ϕ does not impose restrictions on PΣ, but we only
+expect that ϕ is ‘compatible’ with the scenario depicted by PΣ: that is, one of
+the models of ϕ has a non-zero probability. Moreover, what is considered an
+impossible world according to PΣ has to be false (see P-entailment later on).
+This is different from numerous probabilistic logics proposed in the litera-
+ture, (see e.g. [8]) in which typically a probabilistic KB is a formal specifica-
+tion about probabilities and/or subjective probabilities of worlds. We do not
+consider this scenario here and leave it for future work.
+Next, we are also going to use some additional notions.
+Specifically, the
+extension PΣ of P¯Σ to Σ is defined in the following way: consider ¯w ∈ W¯Σ
+8
+and an extension w ∈ ⟨ ¯w⟩Σ of ¯w (see Remark 2). Then,
+PΣ(w)
+=
+1
+|⟨ ¯w⟩Σ| · P¯Σ( ¯w)
+(8)
+so that P¯Σ is the marginal distribution of PΣ, i.e.
+P¯Σ( ¯w)
+=
+X
+w∈⟨ ¯w⟩Σ
+PΣ(w) .
+(9)
+Proposition 1. For a formula ϕ, Σϕ ⊆ ¯Σ ⊆ Σ and a probability distribution
+P¯Σ, we have that PΣ(ϕ) = P¯Σ(ϕ), where PΣ is the extension of P¯Σ.
+In particular, by Proposition 1, for any formula ϕ,
+PΣ(ϕ)
+=
+PΣϕ(ϕ) ,
+(10)
+where PΣ is the extension of PΣϕ. In summary, extension and marginalisa-
+tion are two operations that allow us to ‘extend’ or to ‘restrict’ probability
+distributions over alphabets ¯Σ ⊆ Σ.
+Example 4 (Running example cont.). Consider Example 1. Let us assume
+that we have the following probability distribution PΣ w.r.t. Σ = {b, p, o, f, w} 3:
+PΣ
+=def
+{bp¯ofw0.1, b¯pofw0.1, b¯p¯ofw0.15, bp¯o ¯fw0.15,
+b¯po ¯fw0.2, b¯p¯o ¯fw0.2,¯bp¯ofw0.07,¯bp¯of ¯w0.03} .
+Then, the marginalisation of PΣ to ΣK is
+PΣK
+=def
+{bp¯of 0.1, b¯pof 0.1, b¯p¯of 0.15, bp¯o ¯f 0.15,
+b¯po ¯f 0.2, b¯p¯o ¯f 0.2,¯bp¯of 0.1} .
+Therefore, w.r.t. PΣK we have that the following probabilities of formulae:
+b0.9, p0.35, o0.3, f 0.45, w1.0, (p ∧ o)0.0,
+(b → f)0.45, (p → b)0.9, (o → b)1.0
+and, in particular, PΣ(K) = PΣK(K) = 0.35. That is, the probability that one
+3If a world is not listed, then its probability is 0.
+9
+of the models of K is indeed the actual world is 0.35 w.r.t. PΣ.
+As next, we extend the notion of entailment to the case in which we have a
+probability distribution over worlds. To do so, we define the following supra-
+classical monotonic entailment relation: consider formulae ϕ and ψ w.r.t. Σ,
+a probability distribution P over WΣ. Let us define the formula
+P0 = 𭟋{w | P(w) = 0, w ∈ WΣ}
+(11)
+as the disjunction of all worlds having 0 probability. So, P(P0) = 0 and,
+thus, P(¬P0) = 1.
+Then the notion of ϕ P-entails ψ, denoted ϕ ≤P ψ or also ϕ ⊨P ψ, is
+defined as the case in which all non-zero P-probability models of ϕ are ψ
+models: i.e.
+ϕ ≤P ψ iff ϕ ∧ ¬P0 ⊨ ψ,
+(12)
+That is, ϕ ≤P ψ iff [ϕ]+
+Σ ⊆ [ψ]Σ. We also define (i) ϕ <P ψ iff ϕ ≤P ψ and
+ψ ̸≤P ϕ; and (ii) ϕ ≡P ψ (ϕ and ψ are P-equivalent) iff ϕ ≤P ψ and ψ ≤P ϕ.
+We say that ϕ is P-consistent, or also P-satisfiable iff ϕ ̸≤P ⊥.
+Remark 5. Note that ϕ ∧ ¬P0 has a model only iff ϕ has a non-zero prob-
+ability model, i.e. ϕ is P-satisfiable. Therefore, ϕ <P ψ tell us that all non-
+zero P-probability models of ϕ are ψ models and that there is a non-zero
+P-probability model of ψ that is not a model of ϕ.
+Remark 6 (Classical case). Classical propositional logic can be obtained as
+a special case if, e.g. the uniform probability distribution Pu is considered. In
+that case, ϕ ≤Pu ψ iff ϕ ⊨ ψ holds.
+However, this result does not generalise to any probability distribution P:
+while ϕ |= α implies ϕ ≤P α, the opposite is not true. In fact, e.g., for
+ϕ =def a and P(a¯b) = 0, we have ϕ ∧ ¬P0 =def a ∧ ¬(a ∧ ¬b) |= b and thus,
+ϕ ≤P b, but ϕ ̸⊨ b.
+The following Propositions can easily be shown.
+Proposition 2. Consider formulae ϕ and ψ, Σϕ∪Σψ ⊆ ¯Σ ⊆ Σ, a probability
+distribution P over ¯Σ, and the extension PΣ of P to Σ. Then for  ∈ {≤, <},
+ϕ P ψ iff ϕ PΣ ψ.
+The following Proposition will be used extensively later and can easily be
+shown.
+10
+Proposition 3. Consider formulae ϕ and ψ w.r.t. Σ, and a probability dis-
+tribution P over Σ. If ϕ P ψ then P(ϕ)  P(ψ), for  ∈ {≤, <}.
+Moreover, the inverse of Proposition 3 does not hold.
+Example 5 (Running example cont.). Consider Example 4 and P = PΣK.
+It is easily verified that K <P f ∧ (¬b → (p ∨ o ∨ f)). Moreover, note that
+PΣK((¬b → (p ∨ o ∨ f))) = 1 as ¯b¯p¯o ¯f 0.0 holds. It follows that PΣK(f ∧ (¬b →
+(p ∨ o ∨ f))) = 1 > 0.35 = PΣK(K) in accordance with Proposition 3.
+Moreover, PΣK(b ∧ p ∧ ¬o ∧ f) = 0.1 < 0.15 = PΣK(b ∧ ¬p ∧ ¬o ∧ f), but
+b ∧ p ∧ ¬o ∧ f ̸<P b ∧ ¬p ∧ ¬o ∧ f and, thus, the converse of Proposition 3
+does not hold.
+We conclude this part by defining the notion of independent formulae: namely,
+consider two formulae ϕ and ψ, and a probability distribution P over Σ, then
+we say that ϕ and ψ are P-independent iff
+P(ϕ ∧ ψ) = P(ϕ) · P(ψ) .
+Example 6 (Running example cont.). Consider Example 4. Then b and w
+are PΣ-independent, while b and f are not.
+We are ready now to present the generalisation for KMs: given a probability
+distribution P over Σ, a KM κ is a total function mapping formulae over Σ
+into R+ ∪ {0, ∞} satisfying the following three axioms:
+(KM1) κ(⊤) = 0 and κ(⊥) = ∞;
+(KM2) κ is monotone non-increasing, i.e. if P(ϕ)  P(ψ) then κ(ψ)  κ(ϕ),
+for  ∈ {≤, <};
+(KM3) κ is additive, i.e. if ϕ and ψ are P-independent, then κ(ϕ ∧ ψ) =
+κ(ϕ) + κ(ψ).
+Let us shortly explain the above axioms. Of course, axiom (KM1) corre-
+sponds to axiom (T), which we already commented. Axiom (KM3) encodes
+a sort of model independence: in this case, we may join ϕ and ψ without any
+loss of information w.r.t. the sum of both. Eventually, concerning (KM2), at
+first note the following: if ϕ P ψ, then by Proposition 3, P(ϕ)  P(ψ) and,
+thus, by (KM2), κ(ψ)  κ(ϕ). So, this case resembles axiom (E). However,
+11
+as P(ϕ)P(ψ) does not imply ϕP ψ, axiom (KM2) is weaker than (E), and
+it is more appropriate to the present framework since now we deal also with
+non-uniform probability distributions.
+From what we have said above, the following is immediate.
+Proposition 4. Consider formulae ϕ and ψ w.r.t. Σ, a probability distribu-
+tion P over Σ, if ϕ P ψ then κ(ψ)  κ(ϕ), for  ∈ {≤, <}.
+Example 7. (No surprise) Consider P over Σ = {a, b} with P(ab) = 1 (all
+other probabilities are 0). Then ⊤ |=P a ∧ b and, thus, by (KM1) and (KM2)
+we get 0 = κ(⊤) ≥ κ(a ∧ b) ≥ 0, i.e. κ(a ∧ b) = 0. That is, under P, a ∧ b
+is no surprise and, thus, does not provide us with any information. On the
+other hand, according to [1], under uniform probability distributions, we get
+κh(a ∧ b) = 2.
+As known from information theory [6], a function satisfying (KM1)-(KM3)
+can be defined in the following way: given a probability distribution P over
+Σ, the Shannon KM, or simply the S-KM of a formula ϕ, denoted κS(ϕ), is
+defined as
+κS(ϕ) = − log2 P(ϕ) ,
+(13)
+where we postulate log2 0 = −∞. Note that the probability distribution P
+is a parameter of κS, which we omit to ease the presentation. In case of
+ambiguity, we will write κS(ϕ, P) instead. Noteworthy, the function κS is
+the unique solution satisfying (KM1) - (KM3), up to a multiplying constant,
+which is a direct consequence of the uniqueness result of the entropy function
+proved by Shannon in [9]. That is,
+Proposition 5. A KM κ satisfying (KM1) - (KM3) is of the form
+1
+log2 b ·
+κS, for a constant b > 1, i.e. for a formula ϕ w.r.t. Σ and a probability
+distribution P over Σ, κ(ϕ) = − logb P(ϕ) =
+1
+log2 b · κS(ϕ). Also, κS satisfies
+(KM1) - (KM3).
+Remark 7. By Eq. 10, it suffices to consider a probability distribution over
+Σϕ to determine κS(ϕ).
+Now, it can easily be shown that Straccia’s KM κh [1] is a special case of κS.
+Proposition 6. For any formula ϕ, given the uniform probability distribution
+Pu
+Σ over Σ, κS(ϕ) = κh(ϕ).
+12
+An immediate consequence of Proposition 6 is also:
+Proposition 7. Under uniform probability distribution, and, thus, classical
+logic, κS satisfies the (TELM) axioms.
+Example 8 (Running example cont.). Consider Example 4. Then
+κS(K) = − log2 0.35 = 1.515 .
+By referring to Example 5, we also have that K <P f and, thus, 1.515 ≈
+κS(K) > κS(f) = − log2 0.45 ≈ 1.152, that is, K has more knowledge about
+the actual world than f, as expected by Proposition 4.
+Remark 8. In [1] some other related measures have been introduced: namely,
+¯α(ϕ) = κ(ϕ)/|Σϕ| (accuracy), ¯γ(ϕ) = κ(ϕ)/|ϕ| (conciseness), and π(ϕ) =
+arg max{ψ|ψ≡ϕ} α(ψ)·γ(ψ) (Pareto optimality), where |ϕ| is the length of ϕ [1].
+The first one defines how precise a KB is in describing the actual world, the
+second one defines how succinct a KB is w.r.t. the knowledge it represents,
+while the last one establishes when we may not increase accuracy without
+decreasing conciseness (or vice-versa). These measures can be extended to
+S-KMs as well by replacing ≡ with ≡P, but we will not address it here.4
+4. KMs-based belief change
+We now show how we may apply KMs to Belief Change (BC) [2, 3]. We
+recap that BC is the research area dedicated to the formal definition of how
+a rational agent should manage its own beliefs while facing new pieces of
+information and aiming at preserving the overall logical consistency of the
+KB. The two main BC operations that have been investigated are revision
+and contraction: the former deals with an agent incorporating in its own
+KB a new piece of information, adjusting the content of the KB to avoid
+the risk of creating new inconsistencies; the latter analyses an agent that has
+to readjust the KB so that a specific piece of information is not derivable
+anymore, for example because it has been informed that the source is not
+reliable. Such two kinds of operations have been characterised from a logical
+point of view by associating a set of formal postulates to each of them. The
+AGM framework [10] is the most popular proposal.
+4Note, however, that these measures do not satisfy the KM axioms by Proposition 5.
+For instance, accuracy does not satisfy (KM2).
+13
+Various axiomatisations have been defined, e.g. the AGM postulates, that
+are believed BC operators should satisfy and, to date, a multitude of differ-
+ent ways for performing these operations have been proposed (see, e.g. [2]).
+In what follows we are going to consider the AGM approach as the basic
+framework and formalise quantitative BC operators employing KMs.
+Our aim here is to propose KM-based BC operators that satisfy the AGM
+postulates and eventually to show that any BC operator that satisfies the
+AGM postulates can be represented as a KM-based BC operator.
+It is well-known that in the AGM framework, there are three types of
+BCs. Given a belief ϕ (of an agent), in
+1. contraction, a sentence α is removed, i.e., a belief ϕ is replaced by
+another belief ϕ ÷ α that is a consequence of ϕ not entailing α;
+2. expansion, a sentence α is added to ϕ and nothing is removed, i.e. ϕ is
+replaced with ϕ + α = ϕ ∧ α;
+3. revision, a sentence α is added to ϕ, and at the same time other sen-
+tences are removed if this is needed to ensure that the resulting belief
+ϕ ⋆ α is consistent.
+A typical way to achieve a revision operator is to rely on the Levi identity
+allowing to define revision in terms of contraction. Alternatively, one may
+rely on the Harper identity to define contraction in terms of revision: that is
+(see also [11]),
+Levi identity: ϕ ⋆ α = (ϕ ÷ ¬α) ∧ α;
+Harper identity: ϕ ÷ ¬α = ϕ ∨ (ϕ ⋆ α).
+We will follow the former path by defining a KM-based contraction operator
+and then use the Levi identity to obtain a KM-based revision operator.
+To start with, consider a probability distribution P over Σ. Let us stress
+the fact that P is a parameter of our setting and that different distributions
+may give rise to different BC operators. However, as we will show, all of them
+will satisfy the AGM postulates. Moreover, please note that any belief ϕ and
+ψ share the same probability distribution P (cf. Remark 4). Additionally, for
+the rest of the paper, we will also consider P-satisfiable formulae only, i.e. our
+belief must be compatible w.r.t. P.
+14
+4.1. Contraction
+A total function ÷: LΣ 7→ LΣ is a contraction operation if it satisfies the
+following postulates (for ease, we write ϕ÷
+α in place of ϕ ÷ α), which are the
+P-entailment analogues of those defined for classical propositional logic as
+in [11]:
+(÷1)
+ϕ ≤P ϕ÷
+α
+(inclusion)
+(÷2)
+If ϕ ̸≤P α, then ϕ÷
+α ≡P ϕ
+(vacuity)
+(÷3)
+If ⊤ ̸≤P α, then ϕ÷
+α ̸≤P α
+(success)
+(÷4)
+If α ≡P β, then ϕ÷
+α ≡P ϕ÷
+β
+(extensionality)
+(÷5)
+ϕ÷
+α ∧ α ≤P ϕ
+(recovery)
+(÷6)
+ϕ÷
+α∧β ≤P ϕ÷
+α ∨ ϕ÷
+β
+(conjunctive overlap)
+(÷7)
+If ϕ÷
+α∧β ̸≤P α, then ϕ÷
+α ≤P ϕ÷
+α∧β
+(conjunctive inclusion)
+Regarding the meaning of the above postulates, we redirect the reader to
+some of the many publications about the AGM approach, e.g. [10, 11, 12].
+The reader who is familiar with the AGM literature will also notice that we
+have reformulated the postulates considering formulae, as in [11], instead of
+logically closed theories.
+Now, we define the contraction operation associated with a KM κ (w.r.t. P)
+as follows. Consider formulae ϕ and α. The set of possible remainders of ϕ
+w.r.t. α, denoted ϕ‚α, is defined as
+ϕ‚α =
+ {𭟋([ϕ]+)}
+if ⊤ ≤P α
+{𭟋([ψ]+) | ϕ ≤P ψ and ψ ̸≤P α}
+otherwise .
+(14)
+Essentially, as we would like to contract α from ϕ and, thus, would like to
+avoid that the contraction P-entails α, we weaken ϕ so that we do not P-entail
+α anymore. Please note that the set ϕ‚α is finite, as for sets of formulae, we
+assumed that they cannot contain any pair of equivalent formulae (cf. Re-
+mark 1). Now, from the set of possible remainders, we select those that are
+most specific according to P-entailment, i.e.
+ϕ⊥α
+=
+{ψ ∈ ϕ‚α |̸ ∃ψ′ ∈ ϕ‚α s.t. ψ′ <P ψ}.
+(15)
+This set is called the set of remainders of ϕ w.r.t. α.
+Note that, if ϕ ̸≤P α or ⊤ ≤P α then the unique reminder is P-equivalent
+to ϕ.
+On the other hand, it is not difficult to see that, if ϕ ≤P α, any
+remainder ψ a formula whose models are those obtained by adding to the
+15
+non-0 probability models of ϕ a single model of ¬α. That is,
+Proposition 8. Consider a probability distribution P over WΣ and formulae
+ϕ and α such that ϕ ≤P α and ⊤ ̸≤P α. Then ψ ∈ ϕ⊥α iff
+ψ ≡ 𭟋([ϕ]+
+Σ ∪ {w}) ,
+for some w ∈ [¬α]+
+Σ. Furthermore, P(ψ) = P(𭟋([ϕ]+
+Σ)) + P(w). On the other
+hand, if ϕ ̸≤P α or ⊤ ≤P α holds then ϕ⊥α = {𭟋([ϕ]+)}.
+Eventually, contraction is defined in the following way.
+Definition 1 (KM-contraction). Given formulae ϕ, α and a KM κ, then the
+KM-contraction operator ÷κ is defined as
+ϕ÷κ
+α
+=
+_
+κ min(ϕ⊥α)
+(16)
+where, given a set of formulae Γ
+κ min(Γ) = {ϕ ∈ Γ | ∀ψ ∈ Γ, κ(ϕ) ≤ κ(ψ)} .
+The intuition behind the above definition is that we try to minimise the
+surprise among the most specific possible remainders. But, let us go more in
+detail about the rationale behind this formalisation.
+The definition of appropriate procedures for modelling the belief dynamics
+of a rational agent cannot be attained by relying only on purely logical con-
+straints, since they are often insufficient to determine unequivocally which
+beliefs have to be dropped, as illustrated by the following example (taken
+from [13, p.1]). A KB contains the statements “Juan was born in Puerto
+Carreño” (α), “José was born in Puerto Ayacucho” (β), and “Two people are
+compatriots if they were born in the same country” (γ). Assume that we
+are informed that “Juan and José are compatriots” (δ); if we simply add δ
+to the KB, we will obtain a contradiction,5 hence we have to modify our KB
+to accommodate the new information still preserving consistency. To this
+end, we have various options: for example, we could eliminate either α, β, or
+even γ; or, among other options, we could weaken α and β into, respectively,
+5Despite close to each other, Puerto Carreño is in Colombia, while Puerto Ayacucho is
+in Venezuela.
+16
+“Juan was born in Puerto Carreño or Puerto Ayacucho” and “José was born
+in Puerto Carreño or in Puerto Ayacucho”.
+To define procedures that model such changes, we may impose some extra-
+logical rationality criteria that allow us to choose only one option among the
+different possible ones. Different criteria have been suggested that can be
+used to determine which KBs a rational agent should prefer if faced with
+different options (see [14] for a more detailed presentation). One principle
+that is commonly accepted is the Principle of Indifference, which is a basic
+principle connected to the formal management of preferences:
+The Principle of Indifference
+Objects held in equal regard should be treated equally .
+(17)
+Another popular one is the Principle of Informational Economy [15], which
+simply states that we should not give up our beliefs beyond necessity: infor-
+mation is “precious”, and if we need to change our beliefs, we should drop as
+little information as possible in the process.
+The Principle of Informational Economy
+Keep loss of information to a minimum
+.
+(18)
+This is generally considered the guiding principle of the AGM approach (but
+it has also been argued that that is not the case [16]).
+The Principle of
+Informational Economy is quite general and formally it can be interpreted
+in different ways. For example, it can be implemented in the form of the
+Principle of Conservatism [17], where the relative informational difference
+between two KBs is defined in terms of set-theoretic inclusion: if a logical
+theory A contains the logical theory B, then A is considered more informative
+than B and it is preferred or, equivalently, if a formula ϕ implies a formula ψ,
+ϕ is considered more informative than ψ (compare also with Proposition 4).
+Adhering to such a principle together with the Principle of Indifference results
+in the so-called full-meet contraction, that is, to contract ϕ by α we take under
+consideration only the formulas in the set of remainders (according to the
+Principle of Conservatism), and all of them (according to the Principle of
+Indifference). That is, the full-meet contraction is the following operation
+ϕ÷
+α =
+_
+(ϕ⊥α).
+(19)
+It is well-known [13, Sect. 3.8] that full-meet contraction is not a satisfying
+17
+approach to contraction, since it tends to drop too much information. A bet-
+ter behaviour is obtained using a partial-meet contraction, that is, considering
+only some of the elements of the set ϕ⊥α, i.e.
+ϕ÷
+α =
+_
+γ(ϕ⊥α),
+(20)
+where γ is a so-called choice function.6
+Different implementations of the
+partial-meet contraction depend on the rationale that we consider in the
+definition of the choice function. In this work, we propose to use KMs as
+a way of modelling the expectations of a rational agent. To this end, we
+introduce the Principle of Minimal Surprise, where “surprise" is expressed in
+information-theoretic terms, i.e. the more probable an event is the less it is
+surprising.
+The Principle of Minimal Surprise
+The less surprising option should be preferred .
+(21)
+This principle simply states that facing uncertainty about which is the actual
+world, an agent should opt for the most expected (that is, the least surprising)
+option. Such a principle is intuitive, and it has been also assumed in major
+approaches to conditional non-monotonic reasoning, such as [18, 19]. Our
+approach follows the same line, but it uses KMs in order to create a bridge
+between our probabilistic framework and the ranking of the information in
+terms of level of surprise.
+Note that in the KM theory, the informative
+value associated with a piece of information is directly proportional to its
+exceptionality: the less probable it is, the more informative it conveys (it
+is an immediate consequence of the axiom (KM2)). Hence, a formula ϕ is
+strictly less surprising than a formula ψ iff κS(ϕ) < κS(ψ).
+Let us now go back to Definition 1. We want to contract ϕ by α. To
+do that, we need to select some formulas in the remainder set (ϕ⊥α), that,
+relying on KMs and the Principle of Minimal Surprise, results in choosing
+the most expected ones. The result is the equation expressed in (16).
+By Proposition 8 we see that this operation corresponds, from the point
+of view of the semantics, to selecting the most expected worlds in [¬α]+
+Σ.
+Moreover, if we want to be compliant also with the Principle of Indifference,
+we will have to consider all the most expected worlds in [¬α]+
+Σ, as formalised
+6γ returns a set of formulae.
+18
+below in Proposition 9.
+Note that ϕ÷κ
+α
+is deterministic in the sense that it is uniquely determined
+by the given probability distribution (and different probability distributions
+may give rise to different contractions).
+Moreover, given a contraction operator ÷, we may also associate with
+it a quantitative function that numerically specifies how much information
+has been lost by contracting ϕ with α. That is, the information loss of a
+contraction ÷ (w.r.t. a given probability distribution P) is defined as
+L÷
+P (ϕ, α) = κ(ϕ) − κ(ϕ÷
+α) .
+(22)
+Note that L÷
+P (ϕ, α) ≥ 0.
+Remark 9. Please note that, for any AGM contraction operator ÷ on classi-
+cal propositional logic, we may use the definition of information loss of a con-
+traction by reverting equivalently to Straccia’s formulation of KM (see Eq. 6)
+and, thus, in this case the loss can be quantified as L÷(ϕ, α) = κh(ϕ)−κh(ϕ÷
+α).
+Proposition 8 provides us with a simple constructive way to compute a con-
+traction. That is, given P, ϕ and α, ϕ÷κ
+α
+can be computed in the following
+way:
+1. if [ϕ]+
+Σ ̸⊆ [α]Σ or [⊤]+
+Σ ⊆ [α]Σ then return 𭟋([ϕ]+
+Σ) and we are done;
+otherwise
+2. determine the remainder set ϕ⊥α as the set of formulae ψi, where for
+each wi ∈ [¬α]+
+Σ, ψi = 𭟋([ϕ]+
+Σ ∪ {wi}); and
+3. eventually, compute κ(ψi) from P(ψi), determine so κ min(ϕ⊥α) and,
+conclude by applying Eq. 16.
+Example 9 (Running example cont.). Assume that we would like to contract
+K with f, i.e. let us determine K ÷κS f. We already know from Example 5
+that K ≤PΣ f and, thus, K can not be itself a possible reminder. Therefore,
+we need to weaken it. To do so, at first, we build PΣ0, according to Exam-
+ple 4, and then determine the remainder set by using Proposition 8 and the
+models of K identified in Example 1 together with their probabilities as from
+Example 4.
+Now, the non-zero probability models of ¬f are those in PΣ for which f
+is false. These can be identified by:
+[¬f]+
+Σ
+=
+{bp¯o ¯fw0.15, b¯po ¯fw0.2, b¯p¯o ¯fw0.2} .
+19
+As a consequence, we get three remainders, one for each element in [¬f]+
+Σ.
+That is,
+ψ1
+=
+𭟋([K]Σ ∪ {bp¯o ¯fw})
+ψ2
+=
+𭟋([K]Σ ∪ {b¯po ¯fw})
+ψ3
+=
+𭟋([K]Σ ∪ {b¯p¯o ¯fw}) .
+Moreover, it is easily verified that
+PΣ(ψ1)
+=
+0.35 + 0.15 = 0.5
+PΣ(ψ2)
+=
+0.35 + 0.2 = 0.55
+PΣ(ψ3)
+=
+0.35 + 0.2 = 0.55
+and consequently, κS(ψ1) = 1.0, κS(ψ2) ≈ 0.862, and κS(ψ3) ≈ 0.862. Even-
+tually, the knowledge minimal (least surprising/most probable) ones are ψ2
+and ψ3 and, thus, we conclude with
+K ÷κS f
+≡
+ψ1 ∨ ψ2
+≡
+(K ∨ 𭟋b¯po ¯fw ∨ 𭟋b¯p¯o ¯fw)
+≡
+(K ∨ 𭟋b¯p ¯fw) .
+(23)
+Therefore, the contraction weakens the initial belief in Example 1 by making
+the belief ‘birds not being penguins do not fly and have wings’ possible as
+well (w.r.t. the given probability distribution). The latter is also the ‘least
+surprising’ (most probable) candidate among the remainders. Moreover, note
+that PΣ(K÷κS f) = 0.75, so κS(K÷κS f) ≈ 0.415, and, thus, the information
+loss of this contraction can be quantified as
+L
+÷κS
+PΣ (K, f) = 1.515 − 0.415 = 1.1 .
+(24)
+From Proposition 8, and, from what we have seen in Example 9 above, it is
+then not surprising that the following proposition holds.
+Proposition 9. Consider a probability distribution P over W, a KM κ and
+formulae ϕ and α. Then
+ϕ÷κ
+α
+≡
+ 𭟋([ϕ]+ ∪ minκ([¬α]+))
+if ϕ ≤P α
+𭟋[ϕ]+
+otherwise,
+(25)
+20
+where minκ([¬α]+) = {w ∈ W | w ∈ [¬α]+ and there is no w′ ∈ W s.t. w′ ∈
+[¬α]+ and κ(w′) < κ(w)}.
+A consequence of Proposition 9 is the following proposition establishing ex-
+actly the information loss of a contraction of ϕ w.r.t. α in terms of the
+probability of ϕ and the probability of having a knowledge minimal (least
+surprising) ¬α world.
+Corollary 1. Consider a probability distribution P over W, a KM κ and
+formulae ϕ and α. Then
+L÷
+P (ϕ, α) =
+(
+log2(1 + P(𭟋 minκ([¬α]+)
+P(ϕ)
+)
+if ϕ ≤P α
+0
+otherwise .
+(26)
+So, for instance, by referring to Example 9 and Eq. 23, we have P(K) = 0.35
+and P(𭟋b¯p ¯fw)) = P(𭟋b¯po ¯fw)) + P(𭟋b¯p¯o ¯fw)) = 0.2 + 0.2 = 0.4 and, thus,
+L÷
+P (K, f)
+=
+log2(1 + 0.4
+0.35)
+=
+1.1 ,
+which confirms Eq. 24.
+The following proposition tells us that a KM-contraction operator7 is an
+AGM contraction operation.
+Proposition 10. Consider a probability distribution P and a KM-contraction
+operator ÷κ based on P. Then ÷κ is an AGM contraction operator, that is,
+it satisfies postulates (÷1)-(÷7).
+Next, we prove that every AGM contraction operation can be represented as
+a KM-contraction operation by appropriately defining the probability distri-
+bution underlying the KM-contraction operation. That is, the various AGM
+contraction operations differentiate each other on a probability distribution
+over worlds they rely on.8
+7We recall that different probability distributions may give rise to different KM-
+contraction operators.
+8Of course, such a characterisation would not be possible using Straccia’s κh, where
+the uniform distribution is assumed.
+21
+To start with, it is well-known that AGM operations can be characterised
+by a total preorder over the set of interpretations WΣ. Formally, given a
+formula ϕ, a total preorder ≤ϕ on WΣ, (we denote the related strict relation
+as <ϕ, while denote related symmetric relation as ≃ϕ), is a faithful assignment
+for ϕ iff the following conditions hold:
+1. if {w, w′} ⊆ [ϕ]Σ, then w ≃ϕ w′; and
+2. if w ∈ [ϕ]Σ and w′ ̸∈ [ϕ]Σ, then w <ϕ w′.
+Eventually, given a preorder ≤ over worlds,
+min
+≤ ([ψ]Σ) = {w ∈ [ψ]Σ | w ≤ w′, for every w′ ∈ [ψ]Σ} .
+The notion of a faithful assignment allows us to characterise contraction and
+revision operations satisfying (÷1) − (÷7). The following is a representa-
+tion result that can be easily derived and is the KM-based analogue to [11,
+Theorem 14] and [20, Theorem 3.3].9
+Proposition 11 ([11, 20]). Let ϕ, α be formulae.
+An operation ÷ on ϕ
+satisfies (÷1) − (÷7) if and only if there is a faithful assignment ≤ϕ for ϕ
+such that
+ϕ÷
+α ≡ 𭟋([ϕ] ∪ min
+≤ϕ ([¬α])) .
+So, this proposition tells us that we may express the set of models of the
+contraction of ϕ by α as the union of the models of ϕ and of the minimal
+counter-models of α w.r.t. ≤ϕ.
+Given that Σ is finite, the total preorder ≤ϕ can be easily translated into
+a ranking function rϕ: namely
+rϕ(w) =
+(
+0,
+if w ∈ min≤ϕ(WΣ)
+i,
+if w ∈ min≤ϕ(WΣ \ {w′ | rϕ(w′) < i}) ,
+(27)
+which we call a ϕ-faithful ranking. Note that models of ϕ have rank 0. The
+contraction ÷ associated to rϕ is then defined as
+ϕ÷
+α ≡ 𭟋([ϕ] ∪ min
+rϕ ([¬α])) .
+(28)
+9The reader may compare it also with Proposition 9.
+22
+Example 10. Let Σ = {a, b, c} and ϕ =def a ∧ b. A ϕ-faithful ranking r is
+shown in Table 1. The other columns will be addressed in Example 11 later
+on. To determine (a ∧ b)÷r
+b , we have to consider minr([¬b]) = {a¯bc, a¯b¯c}.
+Hence [(a ∧ b)÷r
+b ] = {abc, ab¯c, a¯bc, a¯b¯c} and, thus, (a ∧ b)÷r
+b
+≡ a.
+Table 1: ϕ-faithful ranking r with possible r-faithful probability distribution P,
+and the relative KM.
+r
+worlds
+P
+κS
+2
+¯abc
+¯ab¯c
+1/16
+4
+1
+abc
+ab¯c
+¯abc
+¯ab¯c
+2/16
+3
+0
+abc
+ab¯c
+3/16
+2.415
+Now, given any set of worlds W and any ϕ-faithful ranking r over W, we
+can define an r-faithful probability distribution Prϕ over W respecting the
+following constraints: (i) for any w, w′ ∈ W, Prϕ(w) ≥ Prϕ(w′) iff rϕ(w) ≤
+rϕ(w′); and (ii) for any w ∈ W, Prϕ > 0.
+Proposition 12. For any formula ϕ, set of worlds W, and ϕ-faithful ranking
+r over W, it is always possible to define an r-faithful probability distribution
+P over W.
+Now, using P constructed as in Proposition 12, we can generate a KM-
+contraction that corresponds to the AGM-contraction we started with.
+Proposition 13. Let ϕ be any formula and ÷ any AGM-contraction for ϕ.
+We can define a KM contraction ÷κ s.t., for all α, ϕ÷
+α ≡ ϕ÷κ
+α
+holds.
+Example 11. Consider Table 1. The P (resp. κS) column indicates world’s
+probabilities (resp. KM) within the same rank according to an r-faithful prob-
+ability distribution P, as by Proposition 12. For instance, if P(abc) = 3/16
+(resp. κS(abc) = 2.415). To determine (a ∧ b)
+÷κS
+b
+w.r.t. that P, we have to
+consider minκS([¬b]) = {a¯bc, a¯b¯c}. Hence, [(a ∧ b)
+÷κS
+b
+] = {abc, ab¯c, a¯bc, a¯b¯c}
+and (a ∧ b)
+÷κS
+b
+≡ a ≡ (a ∧ b)÷r
+b , in agreement with Proposition 13.
+A consequence of Propositions 10 and 13 is the following.
+Proposition 14. A function ÷ is an AGM contraction operation iff it is a
+KM-contraction operation.
+23
+(a)
+(b)
+Figure 1: (a) System of spheres; (b) System of spheres with contraction ϕ÷
+α shaded.
+4.2. Sphere-based view of contraction
+An interesting way of viewing a contraction operator may be given pictorially
+in terms of a system of spheres (see, e.g. [5, 21]), as illustrated in Figure 1
+(a). Specifically, consider a formula ϕ and a formula α to be contracted from
+ϕ. A sphere σ is a set of possible worlds.10 A system of spheres Sϕ centred
+on ϕ 11 is an order σ0 < σ1 . . . < σn of nested spheres (in the sense of set
+inclusion σi ⊂ σi+1, 0 ≤ i < n) in which the smallest or innermost sphere is
+σ0 = [ϕ]+ (the possible models of ϕ), the outermost is σn = [⊤]+ (all possible
+models) and where
+1. all possible worlds in the annulus Ai+1 = σi+1 \ σi (0 ≤ i < n) have the
+same probability, i.e. for w, w′ ∈ Ai+1, P(w) = P(w′); and
+2. the probability of a world decreases from the innermost annulus A1 to
+the outermost annulus An, i.e. for w ∈ Ai and w′ ∈ Ai+1 (i > 0), we
+have P(w) > P(w′).
+Intuitively, the agent believes the actual world to be one of the ϕ-worlds but
+does not have sufficient information to establish which one. However, the
+agent may be mistaken, in which case it believes that the actual world is
+most likely to be one of those in the next greater sphere and so on. That
+is, with 2. we want to say that the nesting of the spheres defines an order
+in terms of increasing surprise of the worlds an agent considers possible.
+Specifically, moving from the innermost annulus to the outermost one in-
+creases the surprise, from an information-theoretic point of view. On the
+10That is, worlds having non-zero probability.
+11We will omit the reference to Sϕ if clear from context.
+24
+other hand, point 1, encodes the fact that each possible world within an
+annulus is equally plausible and there is no reason to prefer one world to
+the other if we accept the Principle of Indifference. Now, in order to con-
+tract α from ϕ 12 we need to add at least one ¬α model to the models of
+ϕ. As we are inspired by the Principles of Minimal Surprise and Indiffer-
+ence, to do so we consider the smallest sphere σ(¬α)) intersecting [¬α]+,
+which is indeed minκ([¬α]+) = σ(¬α) ∩ [¬α]+ (see Figure 1 (b)). By the
+Principle of Indifference, each world in this intersection is equally plausible
+and, thus, the possible models of ϕ÷
+α (see also by Proposition 9) are those in
+[ϕ]+ ∪ minκ([¬α]+), i.e. the shaded ones in Figure 1 (b).
+Remark 10. Note that we may express σ(¬α) in the following way. For a
+formula β, let pmax
+β
+be the maximal probability of the possible β-models, i.e.
+pmax
+β
+= max{P(w) | w ∈ [β]+} .
+Note that P(w) = pmax
+β
+for all w ∈ minκ[β]+. Then
+σ(¬α)) = [ϕ]+ ∪ {w ∈ [⊤]+ \ [ϕ]+ | P(w) ≥ pmax
+¬α } .
+(29)
+4.3. A contraction without recovery
+As we have seen, our contraction operator is an AGM contraction and, thus,
+satisfies the (in)famous recovery postulate (÷5) around which there is a long-
+standing debate. Various contraction proposals have been developed not sat-
+isfying (÷5), such as saturatable contraction [22], semi contraction [23], se-
+vere withdrawal [5], recuperative/ring withdrawal [24], and more (see e.g. [2]).
+The sole purpose of this section is to illustrate how one may build from
+our KM-based contraction operator one not satisfying the recovery postulate.
+To do so, we focus on severe withdrawal [5], denoted ÷÷, since one may give
+for it a simple sphere-based pictorial explanation and formalisation.13
+From a sphere-based point of view, given a formula ϕ and a formula α to
+be contracted,14 the severe withdrawal of α from ϕ, denoted ϕ÷÷
+α , is the shaded
+area in Figure 2 (compare with Figure 1 (b)). Essentially, severe withdrawal
+relies also on the Principle of Weak Preference, according to which “if one
+world is considered at least as plausible as another then the former should
+12For ease, assume [ϕ]+ ⊆ [α]+ and [¬α]+ ̸= ∅.
+13For many other approaches and their sphere-based view, see e.g. [5, Appendix B].
+14Again, for ease we assume [¬α]+ ̸= ∅.
+25
+Figure 2: System of spheres for severe withdrawal showing ϕ÷÷
+α shaded.
+be considered if the latter is. That is, an agent has determined a preference
+over worlds (the spheres) and does not prefer the (closest) ¬α-worlds over
+the (closer) α-worlds just because it is giving up belief in α. Its preferences
+are established prior to the change and we assume that there is no reason
+to alter them in light of the new information" [5].
+Consequently, by fol-
+lowing [5], we may define our km-based severe withdrawal operator as the
+formula corresponding to the set of possible worlds in the smallest sphere
+intersecting [¬α]+, i.e. K÷÷
+α = 𭟋σ(¬α).
+Formally, as we did for contraction, we provide next the P-analogue pos-
+tulates of sever withdrawal given in [5] as follows: a function ÷÷ is a severe
+withdrawal function if it satisfies the following postulates:
+(÷÷1)
+ϕ ≤P ϕ÷÷
+α
+(÷÷2)
+If ϕ ̸≤P α or ⊤ ≤P α, then ϕ÷÷
+α ≡P ϕ
+(÷÷3)
+If ⊤ ̸≤P α, then ϕ÷÷
+α ̸≤P α
+(÷÷4)
+If α ≡P β, then ϕ÷
+α ≡P ϕ÷
+β
+(÷÷6a)
+If ⊤ ̸≤P α, then ϕ÷÷
+α∧β ≤P ϕ÷÷
+α
+(÷÷7)
+If ϕ÷÷
+α∧β ̸≤P α, then ϕ÷÷
+α ≤P ϕ÷÷
+α∧β
+Postulates (÷÷1), (÷÷3), (÷÷4) and (÷÷7) are as for AGM contraction. Pos-
+tulate (÷÷2), is as the vacuity postulate (÷3), but contains an additional
+antecedent ⊤ ̸≤P α to take care of the limiting case, which was previously
+handled with the aid of the recovery postulate, which now is missing. Pos-
+tulate (÷÷6) has been replaced with the stronger antitony condition (÷÷6a),
+which states that anything that is given up to remove a strong sentence (the
+conjunction of α and β) should also be given up when removing a weaker
+sentence (α), provided the latter is not logically true [5].
+26
+Figure 3: System of spheres where ϕ÷κ
+α∧β ≤P β holds.
+We now show, by relying on P-analogue construction as proposed by [5],
+how to define a severe withdrawal function ÷÷κ from our KM-based contrac-
+tion function ÷κ.
+Definition 2 (KM-Severe withdrawal from ÷). Given formulae ϕ, α and a
+KM-contraction ÷κ. Then the KM-severe withdrawal function defined from
+÷κ is defined as follows:
+ϕ÷÷κ
+α
+=
+ V{β | ϕ÷κ
+α∧β ≤P β}
+if ⊤ ̸≤P α
+𭟋[ϕ]+
+otherwise.
+(30)
+Please note that again the set {β | ϕ÷κ
+α∧β ≤P β} is finite, as for sets of for-
+mulae, we assumed that they cannot contain any pair of equivalent formulae
+(cf. Remark 1).
+Now, observe that in order ϕ÷κ
+α∧β ≤P β to hold, it should be the case that
+the smallest sphere σ(¬α) intersecting [¬α]+ has to be interior to the smallest
+sphere σ(¬β) intersecting [¬β]+, i.e. σ(¬α) < σ(¬β), as otherwise we would
+add ¬β-worlds to ϕ÷κ
+α∧β and, thus, ϕ÷κ
+α∧β ≤P β would not hold. Consequently,
+σ(¬α) contains no ¬β-worlds, i.e. β is satisfied by all worlds in σ(¬α) (see
+Figure 3). Therefore, {β | ϕ÷κ
+α∧β ≤P β} is the set of formulae that hold in
+σ(¬α), which in turns mean that ϕ÷÷
+α = 𭟋σ(¬α). From what we have said,
+the following Proposition is immediate.
+Proposition 15. Given formulae ϕ, α, a KM-contraction ÷κ and the KM-
+severe withdrawal function ÷÷κ defined from ÷κ. Then
+ϕ÷÷κ
+α
+≡
+ 𭟋σ(¬α)
+if ⊤ ̸≤P α
+𭟋[ϕ]+
+otherwise.
+(31)
+27
+where σ(¬α) is defined as in Eq. 29.
+In other words, “by contracting α from ϕ according to Definition 2, we keep
+those formulae β that would be retained when given the choice to remove
+either α or β (or both)" [5].
+Remark 11. In [24] it is shown that one may define a ring withdrawal op-
+erator using a severe withdrawal operator or even using an AGM contraction
+operator. Along a similar line, following what we have done in this section,
+it not difficult to see that one may define the analogue KM-based ring with-
+drawal operator using a KM-based severe withdrawal operator or even using
+a KM-based AGM contraction operator.
+By Proposition 15, obviously
+ϕ÷κ
+α
+≤P ϕ÷÷κ
+α
+(32)
+holds (see also Figure 2). Consequently, both
+κ(ϕ÷κ
+α ) ≥ κ(ϕ÷÷κ
+α )
+and
+L÷κ
+P (ϕ, α) ≤ L÷÷κ
+P (ϕ, α)
+hold, confirming that severe withdrawal loses more knowledge/information
+than an AGM contraction.
+Specifically, the loss of the KM-based severe
+withdrawal function and analogue of Corollary 1 is
+Corollary 2. Consider a probability distribution P over W, formulae ϕ and
+α. Then
+L÷÷κ
+P (ϕ, α) =
+(
+log2
+P(𭟋σ(¬α))
+P(ϕ)
+if ⊤ ̸≤P α
+0
+otherwise .
+(33)
+Note that, if ⊤ ̸≤P α, as [ϕ]+ ⊆ σ(¬α), we have P(𭟋σ(¬α)
+P(ϕ)
+≥ 1. So, we may
+also write L÷÷κ
+P (ϕ, α) as
+L÷÷κ
+P (ϕ, α) =
+(
+log2(1 + P(𭟋(σ(¬α)\[ϕ]+))
+P(ϕ)
+if ⊤ ̸≤P α
+0
+otherwise .
+(34)
+We conclude this section by showing that ÷÷κ is indeed a severe withdrawal
+function in the sense that it satisfies the postulates for severe withdrawal.
+28
+Proposition 16. Consider a probability distribution P and a KM-contraction
+operator ÷κ based on P. Then the function ÷÷κ is a severe withdrawal oper-
+ator, that is, it satisfies the postulates (÷÷1)-(÷÷4), (÷÷6a) and (÷÷7).
+We can also prove the opposite direction, that is, for each severe withdrawal
+operator ÷÷ there is a KM κ s.t. ÷÷κ corresponds to ÷÷.
+Proposition 17. A function ÷÷ is a severe withdrawal operator iff it is a
+KM-severe withdrawal operation.
+4.4. Belief revision
+Now, we address the other main BC operation, namely revision. A function
+⋆ is an AGM revision in our setting iff it satisfies the following postulates,
+which are the P-entailment analogues of those in [11]):15
+(⋆1)
+ϕ+
+α ≤P ϕ⋆
+α
+(inclusion)
+(⋆2)
+If ϕ ̸≤P ¬α, then ϕ⋆
+α ≡P ϕ+
+α
+(vacuity)
+(⋆3)
+ϕ⋆
+α ≤P α
+(success)
+(⋆4)
+If α ≡P β, then ϕ⋆
+α ≡P ϕ⋆
+β
+(extensionality)
+(⋆5)
+If α ̸≤P ⊥, then ϕ⋆
+α ̸≤P ⊥
+(consistency)
+(⋆6)
+(ϕ⋆
+α)+
+β ≤P ϕ⋆
+α∧β
+(superexpansion)
+(⋆7)
+If ϕ⋆
+α ̸≤P ¬β, then ϕ⋆
+α∧β ≤P (ϕ⋆
+α)+
+β
+(subexpansion)
+As mentioned at the beginning of this section, every revision operation can
+be modelled by composing a contraction operation and an expansion one
+through the Levi Identity [25]: It is well-known that AGM contractions and
+AGM revisions are interconnected through the Levi Identity.
+Proposition 18 ([10]). A revision ⋆ is an AGM revision operator iff it can
+be defined via the Levi Identity using an AGM contraction operator ÷.
+Applying now the Levi identity we can immediately define the class of KM-
+revision operations ⋆κ as
+ϕ⋆κ
+α = (
+_
+κ min(ϕ⊥¬α)) ∧ α
+(35)
+From Propositions 14 and 18, we can conclude with
+15Note that (⋆2) implies (⋆1).
+29
+Proposition 19. A function ⋆ is an AGM-revision operation iff it is a KM-
+revision operation.
+Example 12. Consider Table 1.
+Assume we believe (a ∧ b) and we are
+informed that ¬b holds. Then the revision (a ∧ b)
+⋆κS
+¬b
+corresponds to (a ∧
+b)
+÷κS
+b
+∧ ¬b. Since (a ∧ b)
+÷κS
+b
+≡ a, we can conclude that (a ∧ b)
+⋆κS
+¬b ≡ (a ∧ ¬b).
+The analogue of Proposition 9 for the revision case is as follows.
+Proposition 20. Consider a probability distribution P over W, a KM κ and
+formulae ϕ and α Then
+ϕ⋆
+α =
+ 𭟋(minκ([α]+))
+if ϕ ≤P ¬α
+𭟋([ϕ]+ ∩ [α]+)
+otherwise.
+(36)
+Finally, likewise contraction, for expansion and revision operators + and ⋆,
+respectively, we may also introduce related quantitative measures such as
+information gain of expansion
+G+
+P (ϕ, α) = κ(ϕ + α) − κ(ϕ) ,
+(37)
+and information change of revision
+R⋆
+P(ϕ, α) = κ(ϕ ⋆ α) − κ(ϕ) ,
+(38)
+respectively. Clearly, while the former is non-negative, the latter may not.
+We conclude this section by providing the analogue of Corollary 1, both
+for information gain of expansion and information change of revision, whereas
+for the latter we use Proposition 20.
+Corollary 3. Consider a probability distribution P over W, a KM κ and
+formulae ϕ and α. Then
+G+
+P (ϕ, α)
+=
+− log2 P(α | ϕ)
+(39)
+R⋆
+P(ϕ, α)
+=
+(
+log2
+P(ϕ)
+P(𭟋(minκ([α]+))
+if ϕ ≤P ¬α
+G+
+P (ϕ, α)
+otherwise .
+(40)
+4.5. Iterated belief revision in brief
+In this section, we also give a succinct look into the problem of iterated
+revision [4]. That is, we are going to look at possible ways in which we can
+30
+Table 2: Probability distribution P, and the relative KM, in Example 13.
+r
+worlds
+P
+κS
+2
+pq
+pq
+0.1
+3.32
+1
+pq
+0.2
+2.32
+0
+pq
+0.6
+0.74
+apply a sequence of revision operations in our framework. In [4] four well-
+known extra postulates for iterated revision have been proposed, which we
+adapt here to our probabilistic setting as follows:
+(C1)
+If ψ ≤P α, then (ϕ⋆
+α)⋆
+ψ ≡P ϕ⋆
+ψ
+(C2)
+If ψ ≤P ¬α, then (ϕ⋆
+α)⋆
+ψ ≡P ϕ⋆
+ψ
+(C3)
+If ϕ⋆
+ψ ≤P α, then (ϕ⋆
+α)⋆
+ψ ≤P α
+(C4)
+If ϕ⋆
+ψ ̸≤P ¬α, then (ϕ⋆
+α)⋆
+ψ ̸≤P ¬α
+For an explanation of the intuitions behind such postulates we refer the reader
+to [4]. Here we just aim to show which of the iterated revisions postulates
+hold for KM-based belief revision.
+The following can be shown.
+Proposition 21. Let ⋆ be a KM-based revision operator. Then ⋆ satisfies
+(C1), (C3) and (C4).
+The next example shows that (C2) is not always satisfied.
+Example 13. Let Σ = {p, q}, and let P = {pq0.6, pq0.2, pq0.1, pq0.1}. Clearly
+κ(pq) = κ(pq) > κ(pq) > κ(pq). Now, let ϕ ≡P (p ∧ q) ∨ (¬p ∧ ¬q), ψ ≡P p,
+and α ≡P (¬p ∧ q). It can be verified (see Table 2) that
+ψ
+≤P
+¬α
+ϕ
+̸≤P
+¬ψ
+ϕ
+≤P
+¬α
+By Proposition 20, the following results follow:
+• [ϕ⋆
+ψ] = 𭟋([ϕ]+ ∩ [ψ]+) = {pq};
+31
+• [ϕ⋆
+α] = 𭟋(minκ([α]+)) = {pq};
+• [(ϕ⋆
+α)⋆
+ψ] = 𭟋(minκ([ψ]+)) = {pq}.
+Therefore, (ϕ⋆
+α)⋆
+ψ ̸≡P ϕ⋆
+ψ.
+From Example 13 it follows that
+Proposition 22. There is a KM-based revision operator ⋆ that does not
+satisfy (C2).
+We recap that postulate (C2) formalises the idea that if ψ contradicts the
+previous information α, then ψ completely erases the effect of the ‘temporary’
+presence of α in the belief set. However, the validity of such a postulate may
+be debatable, as the following example illustrates.
+Example 14. Let Σ = {p, d, c}, where p, d, and c read, respectively, ‘Bob
+owns a pet’, ‘Bob owns a dog’, and ‘Bob owns a cat’. Suppose now that,
+according to the statistics about pet ownership in Bob’s country, we have the
+following probability distribution:
+P = {¯p ¯d¯c0.3, p ¯dc0.3, pd¯c0.25, pdc0.15} .
+Assume that our starting KB (our ϕ) corresponds to the proposition ¬p,
+i.e. ‘Bob does not own a pet’. Also, our probability distribution P, assigning
+probability 0 to some worlds, implies some background information: in par-
+ticular, d → p, c → p, and p → (d ∨ c) (for the sake of simplicity we assume
+that the only kinds of pets are dogs and cats).
+In the following, let α := d and ψ := ¬d.
+• If we are informed that ‘Bob does not own a dog’, i.e. we ask to revise
+ϕ by ψ, by Eq. 36, we ‘remain’ in ¯p ¯d¯c. That is, ϕ⋆
+ψ ≡P ϕ.
+• Instead, if we are informed that ‘Bob owns a dog’, i.e. we ask to revise
+ϕ by α, by Eq. 36, we ‘move’ to the world pd¯c (the most expected/least
+surprising world in which d is satisfied) and, thus, ϕ⋆
+α ≡P 𭟋pd¯c.
+If successively we are informed that ‘Bob does not own a dog’, i.e. we ask
+to revise ϕ⋆
+α by ψ, by Eq. 36, we have to consider both the worlds ¯p ¯d¯c and
+p ¯dc, which are the most expected/least surprising worlds in which Bob
+does not own a dog. Therefore, (ϕ⋆
+α)⋆
+ψ ≡P 𭟋¯p ¯d¯c∨𭟋p ¯dc ≡P p → (¬d∧c).
+That is, we leave open the possibility that Bob owns a cat.
+Therefore, ϕ⋆
+ψ and (ϕ⋆
+α)⋆
+ψ are not P-equivalent and we believe that the inequal-
+ity is reasonable to hold in this case.
+32
+5. Conclusions, related and future work
+We have introduced novel quantitative Belief Change (BC) operators
+rooted in Knowledge Measures (KMs), aimed at minimising the (informa-
+tion theoretic) surprise of the information conveyed by the modified belief.
+In particular, our contributions encompass several key aspects: (i) we
+have presented a general information theoretic approach to KMs for which [1]
+is a special case; (ii) we’ve proposed KM-based BC operators that adhere
+to the AGM postulates; and (iii) we’ve demonstrated that any BC operator
+meeting the AGM postulates can be represented as a KM-based BC opera-
+tor, regulated by a specific probability distribution over the worlds. We have
+additionally introduced quantitative metrics that capture the loss of infor-
+mation during contraction, the acquisition of information through expansion,
+and the alteration of information during revision. We also have given a suc-
+cinct look into the problem of iterated revision [4], and have also illustrated
+how one can construct a non-recovery-postulate-compliant contraction op-
+erator from our KM-based framework, by focusing on the so-called severe
+withdrawal [5] model as illustrative example.
+Closely related work. Concerning KMs, to the best of our knowledge, we are
+not aware of other works, except [1], that address the idea of KMs. However,
+there is an emerging community that deals with measuring inconsistency
+degrees, such as [26, 27, 28] (and references therein), which in fact, as pointed
+out in [1], is an area were KMs may apply.
+Concerning, BC the area is by far much more investigated (see, e.g. [12,
+13, 29, 30] (and references therein). An in depth account of the huge literature
+is out of the scope of this paper and, thus, we refer here only to closely related
+work. There have been some publications that have investigated possible con-
+nections between a probabilistic approach and belief revision [31, 32, 33, 19],
+mainly showing the distance between probabilistic conditionals and quali-
+tative conditionals, the latter based on belief revision. Such papers have a
+reasoning framework that is quite different w.r.t. ours. As mentioned within
+our paper, various definitions and properties in terms of P-entailment have a
+natural classical propositional logic counterpart [11], which we used to build
+up our framework. Worth mentioning are also [22, 34], whose major objective
+was to illustrate a contraction that does not satisfy the recovery postulate.
+Interestingly, besides the recovery postulate, Levi’s contraction does neither
+satisfy conjunctive overlap nor conjunctive inclusion. But, the interesting
+33
+point is that one may regain these two properties back by relying on the
+notion of Information Value (IV) [22, 34] that should be used to guide the
+selection of contraction candidates. Essentially, two variants of IVs have been
+identified:16 (i) strong monotonicity of IV V: if α |= β then V(α) > V(β);
+and (ii) weak monotonicity of IV V: if α |= β then V(α) ≥ V(β). From that,
+the value-based Levi contraction is then defined, roughly, as a disjunction of
+the V-maximal elements in S(ϕ, α), where this latter is the set of so-called
+saturatable contractions that consist of formulae ψ weaker than ϕ such that
+ψ ∧ ¬α is maximally consistent.17 Of course, the notion of IV resembles the
+axiom (E) of KMs in [1] in the sense that the latter are weak monotonic IVs,
+though the opposite is not true. Also, the overall definition of value-based
+Levi contraction is based on an IV maximisation selection process among
+saturatable contractions, while we rely on a KM minimisation selection pro-
+cess over remainders (w.r.t. a probabilistic distribution). Nevertheless, at the
+time of writing, the relationship between Levi’s value-based Levi contraction
+and our KM-based one is still unclear and we will address it in future work,
+together with other alternative constructions of BC operators. Let us also
+mention that we also tried to consider the κ max operator (with obvious
+definition) in place of the κ min operator in Definition 1, though it turned
+out to be questionable: as shown in Eq. 13, KMs reward the less probable
+options: the less expected is a piece of information, the “more information
+it contains” from an information-theoretic point of view. But then, regard-
+ing Example 9, if we select the remainders with highest KM, we would have
+given the priority to a world in which the non-flying birds would have been
+penguins (i.e. bp¯o ¯fw0.15) rather than to the more probable world (b¯p ¯fw)0.4.
+Future Work. Topics for future research may include the following (besides
+those already mentioned in the paper here and there): (i) to investigate
+about different choices for KM postulates; (ii) to investigate and/or apply
+the notion of KMs in other contexts such as First-Order Language (FOL),
+or more in general languages that do not have the finite-model property,
+to various forms of paraconsistent logics [35]), e.g., measuring the degree of
+inconsistency [26]), to non-monotonic logics [27, 36], to conditional logics [37],
+16V(α) is real-valued.
+17In our setting, this set may be defined as the set S(ϕ, α) = {ψ | ϕ ≤P ψ and ψ ∧
+¬α is maximal P-consistent }, where β is is maximal if there is no P-consistent γ with
+γ <P β.
+34
+and to uncertain, many-valued and mathematical fuzzy logics [38]; (iii) to
+investigate on the application of KMs to other approaches related to BC,
+inclusive to non recovery postulate-compliant variants; and (iv) to investigate
+forms of belief change obtained by combining the use of KMs with some
+kind of measure of similarity/semantic closeness among worlds, such as Dalal
+distance [39].
+Acknowledgment
+This research was partially supported by TAILOR, a project funded by EU
+Horizon 2020 research and innovation programme under (GA No 952215).
+This paper is also supported by the FAIR (Future Artificial Intelligence Re-
+search) project funded by the NextGenerationEU program within the PNRR-
+PE-AI scheme (M4C2, investment 1.3, line on Artificial Intelligence). Even-
+tually, this work has also been partially supported by the H2020 STARWARS
+Project (GA No. 101086252), type of action HORIZON TMA MSCA Staff
+Exchanges.
+References
+[1] U. Straccia, How much knowledge is in a knowledge base? introducing knowledge
+measures (preliminary report), in: Proceedings of the 24th European Conference on
+Artificial Intelligence (ECAI-20), Vol. 325 of Frontiers in Artificial Intelligence and
+Applications, IOS Press, 2020, pp. 905–912. doi:10.3233/FAIA200182.
+URL http://ebooks.iospress.nl/publication/54977
+[2] E. L. Fermé, S. O. Hansson, Belief Change - Introduction and Overview, Springer
+Briefs in Intelligent Systems, Springer, 2018. doi:10.1007/978-3-319-60535-7.
+URL https://doi.org/10.1007/978-3-319-60535-7
+[3] P. Gärdenfors, Belief Revision, Cambridge University Press, 2003.
+[4] A. Darwiche, J. Pearl, On the logic of iterated belief revision, Artif. Intell. 89 (1–2)
+(1997) 1–29. doi:10.1016/S0004-3702(96)00038-0.
+URL https://doi.org/10.1016/S0004-3702(96)00038-0
+[5] H. Rott, M. Pagnucco, Severe withdrawal (and recovery), Journal of Philosophical
+Logic 28 (5) (1999) 501–547. doi:10.1023/A:1004344003217.
+URL https://doi.org/10.1023/A:1004344003217
+[6] D. Hankerson, P. D. Johnson, G. A. Harris, Introduction to Information Theory and
+Data Compression, 1st Edition, CRC Press, Inc., Boca Raton, FL, USA, 1998.
+35
+[7] J. Minker, On indefinite data bases and the closed world assumption, in: Springer-
+Verlag (Ed.), Proc. of the 6th Conf. on Automated Deduction (CADE-82), Vol. 138
+of Lecture Notes in Computer Science, 1982.
+[8] J. Y. Halpern, Reasoning about Uncertainty, The MIT Press, 2017.
+[9] C. E. Shannon, A mathematical theory of communication a mathematical theory of
+information, The Bell System Technical Journal 27 (1948) 379–423, 623–656.
+[10] C. Alchourrón, P. Gärdenfors, D. Makinson, On the logic of theory change: Partial
+meet contraction and revision functions, Journal of Symbolic Logic 50 (1985) 510–530.
+[11] T. Caridroit, S. Konieczny, P. Marquis, Contraction in propositional logic, Interna-
+tional Journal of Approximate Reasoning 80 (2017) 428–442. doi:10.1016/j.ijar.
+2016.06.010.
+URL https://doi.org/10.1016/j.ijar.2016.06.010
+[12] E. Fermé, S. O. Hansson, Agm 25 years:
+Twenty-five years of research in be-
+lief change, Journal of Philosophical Logic 40 (2) (2011) 295–331.
+doi:10.1007/
+s10992-011-9171-9.
+[13] E. Fermé, S. O. Hansson, Belief Change: Introduction and Overview, Springer Verlag,
+2018.
+[14] H. Rott, M. Pagnucco, Severe withdrawal (and recovery), Journal of Philosophical
+Logic 28 (5) (1999) 501–547. doi:10.1023/a:1004344003217.
+[15] P. Gärdenfors, Knowledge in Flux: Modeling the Dynamics of Epistemic States, MIT
+Press, 1988.
+[16] H. Rott, Two dogmas of belief revision, Journal of Philosophy 97 (9) (2000) 503.
+doi:10.2307/2678489.
+[17] G. Harman, Change in View: Principles of Reasoning, MIT Press, Cambridge, MA,
+USA, 1986.
+[18] P. Gärdenfors, D. Makinson, Nonmonotonic inference based on expectations, Artifi-
+cial Intelligence 65 (2) (1994) 197–245.
+[19] W. Spohn, The Laws of Belief: Ranking Theory and its Philosophical Applications,
+Oxford University Press, Oxford, 2012.
+[20] H. Katsuno, A. Mendelzon, Propositional knowledge base revision and minimal
+change, Artificial Intelligence 3 (52) (1991) 263–294.
+[21] A. Grove, Two modellings for theory change, Journal of Philosophical Logic 17 (2)
+(1988) 157–170. doi:10.1007/BF00247909.
+URL https://doi.org/10.1007/BF00247909
+36
+[22] I. Levi, The Fixation of Belief and its Undoing, Cambridge University Press, 1991.
+[23] E. L. Fermé, R. O. Rodríguez, Semi-contraction: Axioms and construction, Notre
+Dame Journal of Formal Logic 39 (3) (1998) 332–345.
+doi:10.1305/NDJFL/
+1039182250.
+URL https://doi.org/10.1305/ndjfl/1039182250
+[24] E. Fermé, M. Garapa, A. Nayak, M. D. L. Reis, Relevance, recovery and recuperation:
+A prelude to ring withdrawal, International Journal of Approximate Reasoning 166
+(2024) 109108. doi:10.1016/J.IJAR.2023.109108.
+URL https://doi.org/10.1016/j.ijar.2023.109108
+[25] I. Levi, Subjunctives, dispositions and chances, Synthese 34 (1977) 423–455.
+[26] J. Grant, F. Parisi, General information spaces: measuring inconsistency, rationality
+postulates, and complexity, Annals of Mathematics and Artificial Intelligence 90 (2-
+3) (2022) 235–269. doi:10.1007/s10472-021-09740-8.
+URL https://doi.org/10.1007/s10472-021-09740-8
+[27] M. Ulbricht, M. Thimm, G. Brewka, Handling and measuring inconsistency in non-
+monotonic logics, Artif. Intell. 286 (2020) 103344. doi:10.1016/j.artint.2020.
+103344.
+URL https://doi.org/10.1016/j.artint.2020.103344
+[28] M. Thimm, J. P. Wallner, On the complexity of inconsistency measurement, Artif.
+Intell. 275 (2019) 411–456. doi:10.1016/j.artint.2019.07.001.
+URL https://doi.org/10.1016/j.artint.2019.07.001
+[29] P. Peppas, Belief revision, in: F. van Harmelen, V. Lifschitz, B. W. Porter (Eds.),
+Handbook of Knowledge Representation, Vol. 3 of Foundations of Artificial Intelli-
+gence, Elsevier, 2008, pp. 317–359. doi:10.1016/S1574-6526(07)03008-8.
+URL https://doi.org/10.1016/S1574-6526(07)03008-8
+[30] T. I. Aravanis, P. Peppas, Theory-relational belief revision, Ann. Math. Artif. Intell.
+90 (6) (2022) 573–594. doi:10.1007/s10472-022-09794-2.
+URL https://doi.org/10.1007/s10472-022-09794-2
+[31] S. Lindström, W. Rabinowicz, On probabilistic representation of non-probabilistic
+belief revision, Journal of Philosophical Logic 18 (1) (1989) 69–101. doi:10.1007/
+bf00296175.
+[32] J. Hawthorne, D. Makinson, The quantitative/qualitative watershed for rules
+of uncertain inference,
+Stud Logica 86 (2) (2007) 247–297.
+doi:10.1007/
+s11225-007-9061-x.
+URL https://doi.org/10.1007/s11225-007-9061-x
+[33] D. C. Makinson, Conditional probability in the light of qualitative belief change, Jour-
+nal of Philosophical Logic 40 (2) (2011) 121–153. doi:10.1007/s10992-011-9176-4.
+37
+[34] S. O. Hansson, E. J. Olsson, Levi contractions and AGM contractions: a comparison,
+Notre Dame Journal of Formal Logic 36 (1) (1995) 103–119. doi:10.1305/ndjfl/
+1040308830.
+URL https://doi.org/10.1305/ndjfl/1040308830
+[35] J. M. Abe, S. Akama, K. Nakamatsu, Introduction to Annotated Logics - Founda-
+tions for Paracomplete and Paraconsistent Reasoning, Vol. 88 of Intelligent Systems
+Reference Library, Springer, 2015. doi:10.1007/978-3-319-17912-4.
+URL https://doi.org/10.1007/978-3-319-17912-4
+[36] G. Brewka, I. Niemelä, M. Truszczynski, Nonmonotonic reasoning, in:
+F. van
+Harmelen, V. Lifschitz, B. W. Porter (Eds.), Handbook of Knowledge Represen-
+tation, Vol. 3 of Foundations of Artificial Intelligence, Elsevier, 2008, pp. 239–284.
+doi:10.1016/S1574-6526(07)03006-4.
+URL https://doi.org/10.1016/S1574-6526(07)03006-4
+[37] G. Casini, U. Straccia, A general framework for modelling conditional reasoning -
+preliminary report, in: G. Kern-Isberner, G. Lakemeyer, T. Meyer (Eds.), Proceed-
+ings of the 19th International Conference on Principles of Knowledge Representation
+and Reasoning, KR 2022, Haifa, Israel. July 31 - August 5, 2022, 2022.
+URL https://proceedings.kr.org/2022/12/
+[38] D. Dubois, H. Prade, Possibility theory, probability theory and multiple-valued logics:
+A clarification, Annals of Mathematics and Artificial Intelligence 32 (1-4) (2001) 35–
+66.
+[39] M. Dalal, Investigations into a theory of knowledge base revision, in: H. E. Shrobe,
+T. M. Mitchell, R. G. Smith (Eds.), Proceedings of the 7th National Conference on
+Artificial Intelligence, St. Paul, MN, USA, August 21-26, 1988, AAAI Press / The
+MIT Press, 1988, pp. 475–479.
+URL http://www.aaai.org/Library/AAAI/1988/aaai88-084.php
+Appendix A. Some Proofs
+Proposition 1. For a formula ϕ, Σϕ ⊆ ¯Σ ⊆ Σ and a probability distribution
+P¯Σ, we have that PΣ(ϕ) = P¯Σ(ϕ), where PΣ is the extension of P¯Σ.
+Proof. By definition and Eq. 9 we have
+P¯Σ(ϕ) =
+X
+¯w∈[ϕ]¯Σ
+P¯Σ( ¯w) =
+X
+¯w∈[ϕ]¯Σ
+X
+w∈⟨ ¯w⟩Σ
+PΣ(w) =
+X
+w∈[ϕ]Σ
+PΣ(w) = PΣ(ϕ) ,
+which concludes.
+38
+Proposition 2. Consider formulae ϕ and ψ, Σϕ∪Σψ ⊆ ¯Σ ⊆ Σ, a probability
+distribution P over ¯Σ, and the extension PΣ of P to Σ. Then for  ∈ {≤, <},
+ϕ P ψ iff ϕ PΣ ψ.
+Proof. By Eq. 8, for ¯w ∈ W¯Σ and an extension w ∈ ⟨ ¯w⟩Σ, we have P( ¯w) =
+PΣ(w) and, thus, ϕ ∧ ¬P0 and ϕ ∧ ¬PΣ0 are equivalent. Therefore, ϕ ≤P ψ
+iff ϕ ≤PΣ ψ holds. Furthermore, the strict case follows from the fact that
+we rule out in ϕ ∧ ¬P0 and ϕ ∧ ¬PΣ0 all worlds with 0 probability (see also
+Remark 5), which concludes.
+Proposition 3. Consider formulae ϕ and ψ w.r.t. Σ, and a probability dis-
+tribution P over Σ ⊇ Σϕ ∪ Σψ. If ϕ P ψ then P(ϕ)  P(ψ), for  ∈ {≤, <}.
+Proof. Consider the case ϕ ≤P ψ. By definition of P-entailment, [ϕ∧¬P0]Σ ⊆
+[ψ]Σ holds. Therefore, as we rule out 0 probability worlds, P(ϕ) = P(ϕ ∧
+¬P0) ≤ P(ψ).
+Similar to Proposition 2, the strict case follows from the fact that we
+rule out in ϕ ∧ ¬P0 all worlds with 0 probability (see also Remark 5), which
+concludes.
+Proposition 5. A KM κ satisfying (KM1) - (KM3) is of the form
+1
+log2 b ·
+κS, for a constant b > 1, i.e. for a formula ϕ w.r.t. Σ and a probability
+distribution P over Σ, κ(ϕ) = − logb P(ϕ) =
+1
+log2 b · κS(ϕ). Also, κS satisfies
+(KM1) - (KM3).
+Proof. For the interested reader, we outline here a proof. Let us consider the
+function I(P(ϕ)) = κS(ϕ), i.e. I has a probability as parameter. Then, for
+a twice differentiable function I,18 we have by (KM3), I(pp′) = I(p) + I(p′).
+Taking the derivative w.r.t. p, we get p′I′(pp′) = I′(p).
+Now, taking the
+derivative w.r.t. p′, I′(pp′)+pp′I′′(pp′) = 0 follows and by introducing p = pp′,
+we get I′(p) + pI′′(p) = 0. That is, (pI′(p))′ = 0. This differential equation
+has solution I(p) = k ln p + c for k, c ∈ R. Now, by (KM1), I(1) = 0 and,
+thus, c = 0. (KM2) tells us that I(p) is monotonically non-increasing and,
+thus, together with I(1) = 0 we have I(p) ≥ 0 for all p ∈ [0, 1]. Therefore,
+k < 0 has to hold. Eventually, choosing a value for k is equivalent to choosing
+a value b > 1 for k = − 1
+ln b, i.e. b is the value of the base of the logarithm.
+18We make this assumption for ease of presentation, though one doesn’t need to do
+so [9].
+39
+Therefore, I(p) = − logb p and, thus, κ(ϕ) = − logb P(ϕ). Eventually, by
+choosing b = 2, we also get that κS satisfies (KM1) - (KM3), which concludes.
+Proposition 6. For any formula ϕ, given the uniform probability distribution
+Pu
+Σ over Σ, κS(ϕ) = κh(ϕ).
+Proof. If ϕ unsatisfiable then Pu
+Σ(ϕ) = 0 and, thus, by def. κS(ϕ) = ∞ =
+κh(ϕ). Otherwise, Pu
+Σ = 1/2|Σ| and, thus, its marginalisation to Σϕ is Pu
+Σϕ =
+1/2|Σϕ| and Pu
+Σ(ϕ) = Pu
+Σϕ(ϕ) = |[ϕ]Σϕ|/2|Σϕ| holds (by Eq. 10). So, κS(ϕ)
+= − log2 PΣ(ϕ) = − log2 PΣϕ(ϕ) = − log2
+|[ϕ]Σϕ|
+2|Σϕ| = |Σϕ| − log2 |[ϕ]Σϕ| = κh(ϕ),
+which concludes.
+Proposition 8. Consider a probability distribution P over WΣ and formulae
+ϕ and α such that ϕ ≤P α and ⊤ ̸≤P α. Then ψ ∈ ϕ⊥α iff
+ψ ≡ 𭟋([ϕ]+
+Σ ∪ {w})
+for some w ∈ [¬α]+
+Σ. Furthermore, P(ψ) = P(𭟋([ϕ]+
+Σ)) + P(w). On the other
+hand, if ϕ ̸≤P α or ⊤ ≤P α then ϕ⊥α = {𭟋([ϕ]+)}.
+Proof. Assume ϕ ≤P α and ⊤ ̸≤P α. Clearly, 𭟋([ϕ]+
+Σ ∪ {w}) is a possible re-
+minder as ϕ ≤P 𭟋([ϕ]+
+Σ ∪ {w}) and 𭟋([ϕ]+
+Σ ∪ {w}) ̸≤P α holds. Now, assume
+to the contrary that 𭟋([ϕ]+
+Σ ∪ {w}) is not a reminder. Therefore, there is
+another ψ ∈ ϕ⊥α s.t. ψ <P 𭟋([ϕ]+ ∪ {w}). But, that to be the case, it must
+be [ϕ]+ ⊂ [ψ]+ ⊂ ([ϕ]+ ∪ {w}), that cannot be the case. Therefore, each
+reminder corresponds to a formula 𭟋([ϕ]+
+Σ ∪ {w}) with w ∈ [¬α]+
+Σ, which
+concludes this part. Additionally, as w ̸∈ [ϕ]+
+Σ, P(ψ) = P(𭟋([ϕ]+
+Σ)) + P(w)
+holds.
+Eventually, if ϕ ̸≤P α or ⊤ ≤P α holds then ϕ⊥α = {𭟋([ϕ]+)} by the
+definition of the reminder set, which concludes the proof.
+Proposition 9. Consider a probability distribution P over W, a KM κ and
+formulae ϕ and α. Then
+ϕ÷κ
+α
+≡
+ 𭟋([ϕ]+ ∪ minκ([¬α]+))
+if ϕ ≤P α
+𭟋[ϕ]+
+otherwise,
+where minκ([¬α]+) = {w ∈ W | w ∈ [¬α]+ and there is no w′ ∈ W s.t. w′ ∈
+[¬α]+ and κ(w′) < κ(w)}.
+40
+Proof. If ϕ ̸≤P α then by Proposition 8, ϕ⊥α = {𭟋([ϕ]+)} and, thus, ϕ÷κ
+α
+=
+𭟋([ϕ]+). Now, let us assume ϕ ≤P α instead. There are two cases.
+Case ⊤ ≤P α. If ⊤ ≤P α, then minκ([¬α]+) = ∅. Again, by Proposition 8,
+ϕ⊥α = {𭟋([ϕ]+)} and, thus, ϕ÷κ
+α
+= 𭟋([ϕ]+) = 𭟋([ϕ]+ ∪ ∅).
+Case ⊤ ̸≤P α. Let us prove that 𭟋([ϕ]+ ∪ minκ([¬α]+)) ≡ W κ min(ϕ⊥α).
+It is sufficient to prove that each formula in κ min(ϕ⊥α) corresponds
+to a formula 𭟋([ϕ]+ ∪ {w}) with w ∈ minκ([¬α]+).
+At first we prove that a formula 𭟋([ϕ]+ ∪ {w}) with w ∈ minκ([¬α]+)
+is in κ min(ϕ⊥α). Now, 𭟋([ϕ]+ ∪ {w}), is a reminder by Proposition 8,
+i.e. 𭟋([ϕ]+ ∪ {w}) ∈ ϕ⊥α, and we have to prove that 𭟋([ϕ]+ ∪ {w}) ∈
+κ min(ϕ⊥α). Assume it is not the case. That implies that there is ψ ∈
+ϕ⊥α s.t. κ(ψ) < κ(𭟋([ϕ]+ ∪ {w})) and, thus, P(ψ) > P(𭟋([ϕ] ∪ {w})) =
+P(𭟋[ϕ]) + P(w) (by Proposition 8). But, ψ ∈ ϕ⊥α means that, by
+Proposition 8, ψ ≡ 𭟋([ϕ]+ ∪ {w′})) for some w′ ∈ [¬α]+, P(ψ) =
+P(𭟋[ϕ]) + P(w′) and, thus, P(w′) > P(w), that cannot be the case as
+w ∈ mink([¬α]+) and, thus, P(w) ≥ P(w′) has to hold.
+To prove that every formula in κ min(ϕ⊥α) indeed corresponds to some
+formula 𭟋([ϕ]+ ∪ {w}), with w ∈ minκ([¬α]+), consider that every
+formula in κ min(ϕ⊥α) must correspond to a formula 𭟋([ϕ]+ ∪ {w})
+with w ∈ [¬α]+, and for it to be in κ min(ϕ⊥α) it must be one of
+such formulae with the highest probability w.r.t. P, hence w must be
+in minκ([¬α]+).
+Therefore, κ min(ϕ⊥α) = {𭟋([ϕ]+ ∪ {w}) | w ∈ minκ([¬α]+)}. That
+is, 𭟋([ϕ]+ ∪ minκ([¬α])) ≡ W κ min(ϕ⊥α), which concludes.
+Corollary 1. Consider a probability distribution P over W, a KM κ and
+formulae ϕ and α. Then
+L÷
+P (ϕ, α) =
+(
+log2(1 + P(𭟋 minκ([¬α]+)
+P(ϕ)
+)
+if ϕ ≤P α
+0
+otherwise .
+Proof. Consider Proposition 9 and Eq. 22.
+If ϕ ̸≤P α then L÷
+P (ϕ, α) =
+κ(ϕ) − κ(𭟋([ϕ]+)) = κ(ϕ) − κ(ϕ) = 0. Otherwise (ϕ ≤P α), let us note that
+P(𭟋([ϕ]+ ∪ minκ([¬α]+))) = P(ϕ)+P(minκ([¬α]+) = P(ϕ)·(1+P(minκ([¬α]+)/P(ϕ))
+41
+and, thus, L÷
+P (ϕ, α) = κ(ϕ)−κ(ϕ÷
+α) = −log2P(ϕ)+log2 P(𭟋([ϕ]+ ∪ minκ([¬α]+))) =
+−log2P(ϕ)+log2 P(ϕ)·(1+P(minκ([¬α]+)/P(ϕ)) = −log2P(ϕ)+log2 P(ϕ)+log2(1+
+P(minκ([¬α]+)/P(ϕ)), which concludes.
+Proposition 10. A KM-contraction operator ÷κ is an AGM contraction
+operator, that is, it satisfies postulates (÷1)-(÷7).
+Proof. We have to prove that all AGM postulates are satisfied:
+(÷1). ϕ ≤P ψ for every ψ ∈ ϕ⊥α, hence ϕ ≤P
+W κ min(ϕ⊥α).
+(÷2). If ϕ ̸≤P α, then κ min(ϕ⊥α) contains only 𭟋([ϕ]+), which is P-equivalent
+to ϕ.
+(÷3). Assume ⊤ ̸≤P α. Then ψ ̸≤P α for all ψ ∈ ϕ⊥α, that, by the mono-
+tonicity of ≤P, implies W κ min(ϕ⊥α) ̸≤P α.
+(÷4). It is immediate from the definition of ϕ⊥α.
+(÷5). It suffices to prove that ϕ÷κ
+α
+≤P α → ϕ. To this end, we prove that
+for all ψ ∈ κ min(ϕ⊥α), ψ ≤P α → ϕ.
+So, assume that it is not
+the case. Clearly, ψ ∧ (α → ϕ) ≤P ψ. But, ψ ̸≤P α → ϕ and, thus,
+ψ ̸≤P ψ∧(α → ϕ). Therefore, by Proposition 4, κ(ψ∧(α → ϕ)) > κ(ψ).
+As ψ ∈ κ min(ϕ⊥α), ψ ∧ (α → ϕ) /∈ ϕ⊥α follows. But, ϕ ≤P ψ ∧ (α →
+ϕ), so ψ ∧ (α → ϕ) ≤P α.
+That is, ψ ≤P (α → ϕ) → α.
+Since
+(α → ϕ) → α ≡ α, we conclude ψ ≤P α, against the assumption that
+ψ ∈ ϕ⊥α.
+Therefore, for all ψ ∈ κ min(ϕ⊥α), ψ ≤P α → ϕ, and
+consequently ϕ÷κ
+α
+≤P α → ϕ.
+(÷6). By definition ϕ÷κ
+α∧β = W κ min(ϕ⊥(α ∧ β)), while ϕ÷κ
+α
+= W κ min(ϕ⊥α)
+and ϕ÷κ
+β
+= W κ min(ϕ⊥β). So, if ψ ∈ ϕ⊥(α ∧ β) then either ψ ̸≤P α
+or ψ ̸≤P β, and that there is no ψ′ <P ψ s.t. ϕ ≤P ψ′, ψ′ ≤P ψ, and
+either ψ′ ̸≤P α or ψ ̸≤P β, respectively. That is, ψ ∈ ϕ⊥α or ψ ∈ ϕ⊥β.
+Hence, for all ψ ∈ ϕ⊥(α ∧ β), either ψ ∈ ϕ⊥α or ψ ∈ ϕ⊥β. This
+leaves us with three possible options: κ min(ϕ⊥(α∧β)) = κ min(ϕ⊥α),
+κ min(ϕ⊥(α∧β)) = κ min(ϕ⊥β), or κ min(ϕ⊥(α∧β)) = κ min(ϕ⊥α)∪
+κ min(ϕ⊥β), depending whether, given any ψ ∈ κ min(ϕ⊥α) and any
+ψ′ ∈ κ min(ϕ⊥β), k(ψ′) > κ(ψ), κ(ψ′) < k(ψ), or κ(ψ) = κ(ψ′),
+respectively. In any of such three cases, (÷6) is satisfied.
+42
+(÷7). If ϕ÷
+α∧β ̸≤P α, then there is a γ ∈ κ min(ϕ⊥(α ∧ β)) s.t. γ ̸≤P α.
+This implies that all the γ ∈ κ min(ϕ⊥α) are in κ min(ϕ⊥(α ∧ β)).
+That is, κ min(ϕ⊥α) ⊆ κ min(ϕ⊥(α ∧ β)). This in turn implies that
+W κ min(ϕ⊥α) ⊨ W κ min(ϕ⊥(α ∧ β)). Therefore, ϕ÷
+α ≤P ϕ÷
+α∧β holds.
+This concludes the proof.
+Proposition 12. For any formula ϕ, set of worlds W, and ϕ-faithful ranking
+r over W, it is always possible to define an r-faithful probability distribution
+P over W.
+Proof. It is sufficient to define a procedure to determine P given any r. For
+example, we may define a function f : W 7→ N with f(w) = r(w) + 1
+and then define P(w) as follows: let m = 1 + maxw′∈W r(w′). Then P(w) =
+P m−r(w)
+w′∈W f(w′). It is easy to check that P is an r-faithful probability distribution,
+that is, P
+w∈W P(w) = 1 and that the two conditions for r-faithfulness are
+satisfied.
+Proposition 13. Let ϕ be any formula and ÷ any AGM-contraction for ϕ.
+We can define a KM contraction ÷κ s.t., for all α, ϕ÷
+α ≡ ϕ÷κ
+α
+holds.
+Proof. Given ϕ and ÷, by Proposition 11 we know that there is a faithful
+ranking r over a set of worlds W s.t. the contraction ÷r associated to r (see
+Eq.28) corresponds to ÷, that is, for any α, ϕ÷
+α ≡ ϕ÷r
+α . We now define an
+r-faithful probability distribution P over W, and on top of it we generate a
+KM κ. Proposition 12 guarantees that such a probability distribution exists.
+Now, we have to prove that ÷r and ÷κ correspond to each other.
+If
+ϕ ̸≤ α then ϕ ̸≤P α, as there are no zero probability worlds, and, thus, by the
+vacuity postulate ϕ÷r
+α
+≡ ϕ ≡P ϕ÷κ
+α . Otherwise, clearly, for any w, w′ ∈ W,
+r(w) ≤ r(w′) iff P(w) ≥ P(w′) iff κ(w) ≤ κ(w′), by (KM2). Consequently,
+ϕ÷r
+α ≡ 𭟋([ϕ] ∪ minr([¬α])) means that ϕ÷r
+α ≡ 𭟋([ϕ]+ ∪ minκ([¬α]+)) ≡ ϕ÷κ
+α ,
+by Proposition 9, which concludes.
+Corollary 2. Consider a probability distribution P over W, formulae ϕ and
+α. Then
+L÷÷κ
+P (ϕ, α) =
+(
+log2
+P(𭟋σ(¬α)
+P(ϕ)
+if ⊤ ̸≤P α
+0
+otherwise .
+Proof. The case ⊤ ≤P α is straightforward.
+So, let us consider the case
+⊤ ̸≤P α. By definition of the loss and Proposition 15, we have L÷÷κ
+P (ϕ, α) =
+− log2 P(ϕ) + log2 P(σ(¬α)) = log2
+P(𭟋σ(¬α)
+P(ϕ)
+, which concludes.
+43
+Proposition 16. Consider a probability distribution P and a KM-contraction
+operator ÷κ based on P. Then the function ÷÷κ is a severe withdrawal oper-
+ator, that is, it satisfies postulates (÷÷1)-(÷÷4), (÷÷6a) and (÷÷7).
+Proof. We have to prove that all postulates of severe withdrawal are satisfied
+by ÷÷κ:
+(÷÷1). Follows immediately from Proposition 15.
+(÷÷2). If ϕ ̸≤P α the σ(¬α) = [ϕ]+. Therefore, if ϕ ̸≤P α or ⊤ ≤P α, then, by
+Proposition 15, [ϕ÷÷κ
+α ]+ = [ϕ]+ and, thus, ϕ÷÷κ
+α
+≡P ϕ, which concludes.
+(÷÷3). If ⊤ ̸≤P α then, by Proposition 15, [ϕ÷÷κ
+α ]+ = σ(¬α) ̸= ∅ and, thus,
+ϕ÷÷κ
+α
+̸≤P α, which concludes.
+(÷÷4). If α ≡P β, then [α]+ = [β]+, i.e. [¬α]+ = [¬β]+. Therefore, ⊤ ≤P α
+iff ⊤ ≤P β. So, if ⊤ ≤P α then ⊤ ≤P β and, thus, by Proposition 15,
+[ϕ÷÷κ
+α ]+ = [ϕ]+ = [ϕ÷÷κ
+β ]+. On the other hand, if ⊤ ̸≤P α then ⊤ ̸≤P β
+and, thus, by Proposition 15, [ϕ÷÷κ
+α ]+ = σ(¬α) = σ(¬β) = [ϕ÷÷κ
+β ]+.
+Therefore, in any case [ϕ÷÷κ
+α ]+ = [ϕ÷÷κ
+β ]+ and, thus, ϕ÷÷κ
+α
+≡P ϕ÷÷κ
+β , which
+concludes.
+(÷÷6a). Assume ⊤ ̸≤P α and, thus, ⊤ ̸≤P α ∧ β.
+By Proposition 15 we
+have [ϕ÷÷κ
+α ]+ = σ(¬α) and [ϕ÷÷κ
+α∧β]+ = σ(¬α ∨ ¬β). If ⊤ ≤P β, then
+σ(¬α ∨ ¬β) = σ(¬α) and, thus, [ϕ÷÷κ
+α∧β]+ = [ϕ÷÷κ
+α ]+.
+In particular,
+ϕ÷÷κ
+α∧β ≤P ϕ÷÷κ
+α
+holds. Assume now ⊤ ̸≤P β instead. We have two cases:
+(i) σ(¬α) ⊆ σ(¬β); or (ii) σ(¬β) ⊂ σ(¬α). By Proposition 15, in case
+(i) we have [ϕ÷÷κ
+α∧β]+ = σ(¬α) = [ϕ÷÷κ
+α ]+. In case (ii) we have [ϕ÷÷κ
+α∧β]+ =
+σ(¬β) ⊂ σ(¬α) = [ϕ÷÷κ
+α ]+. Therefore, in any case [ϕ÷÷κ
+α∧β]+ ⊆ [ϕ÷÷κ
+α ]+
+holds, i.e. ϕ÷÷κ
+α∧β ≤P ϕ÷÷κ
+α , which concludes.
+(÷÷7). Assume ϕ÷÷
+α∧β ̸≤P α. Therefore, ⊤ ̸≤P α and, thus, ⊤ ̸≤P α ∧ β. By
+Proposition 15, [ϕ÷÷κ
+α ]+ = σ(¬α) and [ϕ÷÷κ
+α∧β]+ = σ(¬α∨¬β). If ⊤ ≤P β,
+then σ(¬α∨¬β) = σ(¬α) and, thus, [ϕ÷÷κ
+α∧β]+ = [ϕ÷÷κ
+α ]+. So, assume now
+⊤ ̸≤P β instead. From ϕ÷÷
+α∧β ̸≤P α we also know that σ(¬β) ⊂ σ(¬α)
+can not be the case as otherwise [ϕ÷÷κ
+α∧β]+ = σ(¬β) ⊆ [α]+, violating
+our assumption.
+Therefore, σ(¬α) ⊆ σ(¬β) has to hold and, thus,
+[ϕ÷÷κ
+α∧β]+ = σ(¬α) = [ϕ÷÷κ
+α ]+. Consequently, in any case ϕ÷÷κ
+α∧β ≤P ϕ÷÷κ
+α
+holds, which concludes.
+44
+Proposition 17. A function ÷÷ is a severe withdrawal operator iff it is a
+KM-severe withdrawal function operation.
+Proof. Proposition 16 proves that every KM-severe withdrawal function ÷÷κ
+is a severe withdrawal operator, that is, it satisfies the postulates (÷÷1)-(÷÷4),
+(÷÷6a) and (÷÷7).
+We need to prove the opposite direction, and the proof is quite straight-
+forward, given the results in [14], in particular Observation 15, which proves
+that for every severe withdrawal operator there is a correspondent withdrawal
+function defined on a system of spheres in the way shown in Figure 2. Given
+such a system of spheres, it is sufficient to define a probability distribution
+over the worlds in the same way we have done in the proof of Proposition
+12, and it is easy to prove that such a probability distribution and the cor-
+respondent KM would generate the same withdrawal function.
+Proposition 20. Consider a probability distribution P over W, a KM κ and
+formulae ϕ and α Then
+ϕ⋆
+α =
+ 𭟋(minκ([α]+))
+if ϕ ≤P ¬α
+𭟋([ϕ]+ ∩ [α]+)
+otherwise.
+Proof. We have to consider two cases:
+1. if ϕ ≤P ¬α, then using Proposition 9
+ϕ⋆
+α
+=
+(
+_
+κ min(ϕ⊥¬α)) ∧ α
+≡
+𭟋(([ϕ]+ ∪ min
+κ [α]+) ∩ [α]+)
+≡
+𭟋(min
+κ ([α]+)) .
+2. If ϕ ̸≤P ¬α, then by Proposition 8, ϕ⊥¬α = {𭟋([ϕ]+} and, thus,
+ϕ⋆
+α = (W κ min(ϕ⊥¬α)) ∧ α ≡ 𭟋([ϕ]+ ∩ [α]+), which concludes.
+Corollary 3. Consider a probability distribution P over W, a KM κ and
+45
+formulae ϕ and α. Then
+G+
+P (ϕ, α)
+=
+− log2 P(α | ϕ)
+R⋆
+P(ϕ, α)
+=
+(
+log2
+P(ϕ)
+P(𭟋(minκ([α]+))
+if ϕ ≤P ¬α
+G+
+P (ϕ, α)
+otherwise .
+Proof. By definition of G+
+P we have
+G+
+P (ϕ, α)
+=
+κ(ϕ + α) − κ(ϕ)
+=
+− log2 P(ϕ ∧ α) + log2 P(ϕ)
+=
+− log2(P(α | ϕ) · P(ϕ)) + log2 P(ϕ)
+=
+− log2 P(α | ϕ) − log2 P(ϕ) + log2 P(ϕ)
+=
+− log2 P(α | ϕ) .
+By definition of R+
+P we have the following two cases. If ϕ ̸≤P ¬α then, by
+Proposition 20, ϕ⋆
+α is equivalent to ϕ ∧ α and, thus, is equivalent to ϕ +
+α. Therefore, R⋆
+P(ϕ, α) = G+
+P (ϕ, α). On the other hand, assume ϕ ≤P ¬α
+instead. Then, by Proposition 20, ϕ⋆
+α = 𭟋(minκ([α]+)) and, thus,
+R⋆
+P(ϕ, α)
+=
+− log2 P(𭟋(min
+κ ([α]+))) + log2 P(ϕ)
+=
+log2
+P(ϕ)
+P(𭟋(minκ([α]+)) ,
+which concludes.
+Proposition 21. Let ⋆ be a KM-based revision operator. Then ⋆ satisfies
+(C1), (C3) and (C4).
+Proof. We prove that each postulate holds.
+(C1). If ψ ≤P α, we have the following possible cases:
+Case ϕ ̸≤P ¬ψ (and, necessarily, ϕ ̸≤P ¬α). Then, by Proposition 20,
+[ϕ⋆
+α] = [ϕ]+ ∩ [α]+ and [(ϕ⋆
+α)⋆
+ψ] = (([ϕ]+ ∩ [α]+) ∩ [ψ]+).
+Now,
+ϕ ̸≤P ¬ψ, by Proposition 20, [ϕ⋆
+ψ] = [ϕ]+ ∩ [ψ]+. Eventually, as
+by hypothesis [ψ]+ ⊆ [α]+, (([ϕ]+ ∩ [α]+) ∩ [ψ]+) = [ϕ]+ ∩ [ψ]+
+follows, that is, (ϕ⋆
+α)⋆
+ψ ≡P ϕ⋆
+ψ.
+46
+Case ϕ ≤P ¬α (and, necessarily, ϕ ≤P ¬ψ). Then, by Proposition 20,
+[ϕ⋆
+α] = minκ([α]+).
+Since by hypothesis [ψ]+ ⊆ [α]+, we have
+two possibilities: (i) minκ([α]+ ∩ [ψ]+) ̸= ∅, and in such a case
+[(ϕ⋆
+α)⋆
+ψ] = minκ([α]+) ∩ [ψ]+ and, since [ψ]+ ⊆ [α]+, we have also
+minκ([α]+) ∩ [ψ]+ = minκ[ψ]+; (ii) minκ([α]+) ∩ [ψ]+ = ∅, and
+also in such a case [(ϕ⋆
+α)⋆
+ψ] = minκ([ψ]+).
+On the other hand,
+given ϕ ≤P ¬ψ we have [ϕ⋆
+ψ] = minκ([ψ]+). That is, (ϕ⋆
+α)⋆
+ψ ≡P ϕ⋆
+ψ.
+Case ϕ ≤P ¬ψ and ϕ ̸≤P ¬α. Then, by Proposition 20, [ϕ⋆
+α] = [ϕ]+ ∩
+[α]+ and, since [ϕ]+ ⊆ [¬ψ]+ by hypothesis, [(ϕ⋆
+α)⋆
+ψ] = minκ([ψ]+).
+On the other hand, again since [ϕ]+ ⊆ [¬ψ]+, [ϕ⋆
+ψ] = minκ([ψ]+).
+That is, (ϕ⋆
+α)⋆
+ψ ≡P ϕ⋆
+ψ.
+We can conclude that in any case (ϕ⋆
+α)⋆
+ψ ≡P ϕ⋆
+ψ holds, as desired.
+(C3). If ϕ⋆
+ψ ≤P α, we have the following possible cases:
+Case ϕ ≤P ¬α (and, necessarily, ϕ ≤P ¬ψ). Then, by Proposition 20,
+[ϕ⋆
+α] = minκ([α]+).
+Since by hypothesis [ψ]+ ⊆ [α]+, we have
+two possibilities: (i) minκ([α]+) ∩ [ψ]+ ̸= ∅, and in such a case
+[(ϕ⋆
+α)⋆
+ψ] = minκ([α]+) ∩ [ψ]+ and, since [ψ]+ ⊆ [α]+, we have also
+minκ([α]+) ∩ [ψ]+ = minκ([ψ]+); (ii) minκ([α]+(∩[ψ]+ = ∅, and
+also in such a case [(ϕ⋆
+α)⋆
+ψ] = minκ([ψ]+). On the other hand, given
+ϕ ≤P ¬ψ we have [ϕ⋆
+ψ] = minκ[ψ]+. That is, (ϕ⋆
+α)⋆
+ψ ≡P ϕ⋆
+ψ.
+Case ϕ ≤P ¬α. Since ϕ⋆
+ψ ≤P α, by Proposition 20, it must be [ϕ⋆
+ψ] =
+minκ([ψ]+). Also, by Proposition 20 we have [ϕ⋆
+α] = minκ([α]+).
+Now we have two possibilities: (i) minκ([α]+) ⊆ [¬ψ]+ and in
+such a case, by Proposition 20, [(ϕ⋆
+α)⋆
+ψ] = minκ([ψ]+), that is,
+[(ϕ⋆
+α)⋆
+ψ] = [ϕ⋆
+ψ], and consequently by hypothesis (ϕ⋆
+α)⋆
+ψ ≤P α; (ii)
+minκ([α]+) ̸⊆ [¬ψ]+ and in such a case [(ϕ⋆
+α)⋆
+ψ] = minκ([α]+)∩[ψ]+,
+and consequently by hypothesis (ϕ⋆
+α)⋆
+ψ ≤P α.
+Case ϕ ̸≤P ¬α. Then, by Proposition 20 [ϕ⋆
+α] = [ϕ]+ ∩ [α]+. Now we
+have two possibilities: (i) [ϕ]+∩[α]+ ⊆ [¬ψ]+ and in such a case we
+have, by Proposition 20, [(ϕ⋆
+α)⋆
+ψ] = minκ([ψ]+), that is, [(ϕ⋆
+α)⋆
+ψ] =
+[ϕ⋆
+ψ], and consequently by hypothesis (ϕ⋆
+α)⋆
+ψ ≤P α.
+(ii) [ϕ]+ ∩
+[α]+ ̸⊆ [¬ψ]+ and in such a case, by Proposition 20, [(ϕ⋆
+α)⋆
+ψ] =
+[ϕ]+ ∩ [α]+ ∩ [ψ]+, and consequently (ϕ⋆
+α)⋆
+ψ ≤P α.
+We can conclude that in any case (ϕ⋆
+α)⋆
+ψ ≤P α, as desired.
+47
+(C4). If ϕ⋆
+ψ ̸≤P ¬α, we have the following possible cases:
+Case ϕ ≤P ¬α. In such a case, by Proposition 20, [ϕ⋆
+α] = minκ([α]+).
+Now we have two possibilities: (i) minκ([α]+) ⊆ [¬ψ]+. In such a
+case, by Proposition 20, [(ϕ⋆
+α)⋆
+ψ] = minκ([ψ]+), that is, [(ϕ⋆
+α)⋆
+ψ] =
+[ϕ⋆
+ψ], and consequently by hypothesis (ϕ⋆
+α)⋆
+ψ ̸≤P ¬α. (ii) minκ([α]+) ̸⊆
+[¬ψ]+. In such a case, by Proposition 20, [(ϕ⋆
+α)⋆
+ψ] = minκ([α]+) ∩
+[ψ]+, and consequently (ϕ⋆
+α)⋆
+ψ ̸≤P ¬α.
+Case ϕ ̸≤P ¬α. Then, by Proposition 20, [ϕ⋆
+α] = [ϕ]+ ∩ [α]+.
+Now
+we have two possibilities: (i) [ϕ]+ ∩ [α]+ ⊆ [¬ψ]+.
+In such a
+case we have, by Proposition 20, [(ϕ⋆
+α)⋆
+ψ] = minκ([ψ]+), that is,
+[(ϕ⋆
+α)⋆
+ψ] = [ϕ⋆
+ψ], and consequently by hypothesis (ϕ⋆
+α)⋆
+ψ ̸≤P ¬α. (ii)
+[ϕ]+ ∩ [α]+ ̸⊆ [¬ψ]+. In such a case [(ϕ⋆
+α)⋆
+ψ] = [ϕ]+ ∩ [α]+ ∩ [ψ]+,
+and consequently (ϕ⋆
+α)⋆
+ψ ̸≤P ¬α.
+We can conclude that in any case (ϕ⋆
+α)⋆
+ψ ̸≤P ¬α, as desired.
+This concludes the proof.
+48

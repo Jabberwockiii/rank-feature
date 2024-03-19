@@ -1,0 +1,1607 @@
+Gradient based Feature Attribution in Explainable AI: A
+Technical Review
+YONGJIE WANG, Nanyang technological university
+TONG ZHANG, Nanyang technological university
+XU GUO, Nanyang technological university
+ZHIQI SHEN, Nanyang technological university
+The surge in black-box AI models has prompted the need to explain the internal mechanism and justify their
+reliability, especially in high-stakes applications, such as healthcare and autonomous driving. Due to the lack of
+a rigorous definition of explainable AI (XAI), a plethora of research related to explainability, interpretability, and
+transparency has been developed to explain and analyze the model from various perspectives. Consequently,
+with an exhaustive list of papers, it becomes challenging to have a comprehensive overview of XAI research
+from all aspects. Considering the popularity of neural networks in AI research, we narrow our focus to a
+specific area of XAI research: gradient based explanations, which can be directly adopted for neural network
+models. In this review, we systematically explore gradient based explanation methods to date and introduce
+a novel taxonomy to categorize them into four distinct classes. Then, we present the essence of technique
+details in chronological order and underscore the evolution of algorithms. Next, we introduce both human and
+quantitative evaluations to measure algorithm performance. More importantly, we demonstrate the general
+challenges in XAI and specific challenges in gradient based explanations. We hope that this survey can help
+researchers understand state-of-the-art progress and their corresponding disadvantages, which could spark
+their interest in addressing these issues in future work.
+CCS Concepts: • Computing methodologies → Philosophical/theoretical foundations of artificial
+intelligence; Neural networks; Knowledge representation and reasoning; • Theory of computation
+→ Design and analysis of algorithms.
+Additional Key Words and Phrases: Gradients, Feature attribution, Integrated Gradients, Explainable AI,
+Explanability
+ACM Reference Format:
+Yongjie Wang, Tong Zhang, Xu Guo, and Zhiqi Shen. 2024. Gradient based Feature Attribution in Explainable
+AI: A Technical Review. 1, 1 (March 2024), 25 pages. https://doi.org/10.1145/nnnnnnn.nnnnnnn
+1
+INTRODUCTION
+Nowadays, we are witnessing a remarkable surge of neural network models across various fields,
+e.g., computer version [28, 43, 54], natural language processing [10, 53, 97], robotics [9, 47], and
+healthcare [36, 75]. Due to their opaque decision-making processes, AI models may exhibit biases
+toward ethnic minorities or make unexpected and potentially catastrophic errors. For example,
+ProPublica reported that the COMPAS justice system is biased towards African-American defendants
+Authors’ addresses: Yongjie Wang, Nanyang technological university, yongjie002@e.ntu.edu.sg; Tong Zhang, Nanyang
+technological university, tong.zhang@ntu.edu.sg; Xu Guo, Nanyang technological university, xu.guo@ntu.edu.sg; Zhiqi
+Shen, Nanyang technological university, zqshen@ntu.edu.sg.
+Permission to make digital or hard copies of all or part of this work for personal or classroom use is granted without fee
+provided that copies are not made or distributed for profit or commercial advantage and that copies bear this notice and the
+full citation on the first page. Copyrights for components of this work owned by others than the author(s) must be honored.
+Abstracting with credit is permitted. To copy otherwise, or republish, to post on servers or to redistribute to lists, requires
+prior specific permission and/or a fee. Request permissions from permissions@acm.org.
+© 2024 Copyright held by the owner/author(s). Publication rights licensed to ACM.
+XXXX-XXXX/2024/3-ART $15.00
+https://doi.org/10.1145/nnnnnnn.nnnnnnn
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+arXiv:2403.10415v1  [cs.AI]  15 Mar 2024
+2
+Yongjie wang, et al.
+Explainable AI
+Ante-hoc Explanation
+Post-hoc Explanation
+Model Inspection
+Outcome Explanation
+Feature Attribution
+Counterfactual Explanation
+Model Explanation
+Interpretable Models
+Fig. 1. Taxonomy of Explainable AI according to [26]. In this research, we focus on gradient based explanations
+in feature attribution.
+by predicting a higher likelihood of their reoffending [35]. Ribeiro et al. [70] observed that the
+model discriminates between wolves and husky dogs with the existence of snow in the background.
+Therefore, there is an urgent need to elucidate the inner processes, understand the decision-making
+mechanisms, and enhance user trust of AI systems.
+Explainable AI (XAI) refers to a series of techniques designed to reason and understand model
+behaviors, provide insights to rectify model errors/biases, and ultimately enable users to accept
+and trust in model’s prediction. Following the taxonomy by Guidotti et al. [26], shown as Figure 1,
+XAI can be categorized into the following aspects: ante-hoc explanation and post-hoc explanation.
+Ante-hoc explanation strives to develop transparent models that users can directly comprehend
+without the need for additional explanation tools, e.g., decision tree [69] and decision rule [31].
+Post-hoc explanation aims to explain a trained black-box model by exploiting the relationship
+between input features and model predictions. Post-hoc explanations can be further classified
+into model explanation [13, 45], outcome explanation [70, 84], and model inspection [18, 23]. Model
+explanation involves approximating the overall logic of a black-box model using an interpretable
+and transparent model at a global level. Outcome explanation focuses on exploring the underlying
+reasons for a specific prediction at a local level. Model inspection aims to offer visual and textual
+representations to facilitate understanding of the working mechanism of the model.
+Two approaches are commonly employed in outcome explanation: feature attribution (also
+referred to as feature importance approach) and counterfactual explanation. Feature attribution
+delves into directly identifying the importance of input features to the model’s output while
+counterfactual explanation explores minimal and meaningful perturbations in the input space, to
+answer what changes in input values might affect the model’s prediction. For a more in-depth
+exploration of the connections between both approaches, we refer readers to Kommiya Mothilal
+et al.[42].
+1.1
+Purpose of This Survey
+As there is no universal and rigorous definition of XAI, a plethora of research related to explainability,
+interpretability, transparency, and other related concepts fall within the XAI field. A search for
+the keywords “explainable AI” on Google Scholar yields more than 200, 000 results, presenting a
+formidable challenge to comprehensively elucidate all facets of XAI within a single publication.
+Although there have been many survey papers or book chapters [2, 5, 11, 14, 14, 21, 26, 30, 51,
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+Gradient based Feature Attribution in Explainable AI: A Technical Review
+3
+58, 73, 85] on XAI, most of them give a brief description and demonstrate few early-stage works
+for a specific subfield of XAI such as gradient based feature attribution. The under-exploration
+of the specific subfield motivates us to comprehensively overview recent progress on gradient
+based explanations. Previous surveys aim to help practitioners quickly grasp various facets of XAI,
+whereas our survey paper delves into algorithmic details of gradient based explanation methods.
+By doing so, our objective is to assist researchers in applying the appropriate approach in more
+applications and fostering innovative breakthroughs in the narrow field.
+Based on different methodological approaches, feature attribution contains the following branches
+of research: perturbation based methods [16, 17, 95], surrogate based methods [25, 70], decomposition
+based methods [6, 8, 59, 60] and gradient-based methods [79, 81, 84]. However, in this paper, our
+focus is on gradient-based methods, driven by the following considerations.
+• Instinct of gradients. Gradients quantify how infinitesimal changes in input features impact
+the model predictions. Therefore, we can leverage gradients and their variants to effectively
+analyze the influence of feature modifications on the outcomes predicted by the model.
+• Seamless integration for neural networks. Neural networks have gained great popularity
+and impressive performance across various domains. After model training, gradients can
+be readily obtained through a backward pass. Therefore, gradient based explanations are
+straightforward to explain the neural networks without necessitating any changes to the
+models themselves.
+• Satisfaction of axiomatic properties. Due to the absence of ground truth, feature attri-
+bution methods may produce different explanations, leading to challenges in determining
+which one to trust. Gradient based explanations are intentionally designed to satisfy certain
+axiomatic principles, such as sensitivity and completeness, ensuring to produce reasonable
+and desired explanations.
+1.2
+Our Contributions
+The contributions of our survey are summarized as follows:
+• We propose a novel taxonomy that systematically categorizes gradient based feature attri-
+bution into four groups. Subsequently, we introduce the gist of research motivation and
+technique detail for algorithms in each group.
+• We comprehensively overview a series of widely accepted evaluation metrics, including
+human evaluation and objective metrics, enabling a quantitative and qualitative comparison
+of the performance of various explanation methods.
+• We summarize both general research challenges in XAI and specific challenges unique
+to gradient based explanations, which could nourish and build a foundation for potential
+improvements in future work.
+1.3
+Research outline
+In the rest of this paper, Section 2 introduces philosophy and algorithm details of gradient based
+feature attribution; Section 3 represents evaluation metrics of gradient based explanations, which
+is also applicable to other feature attribution methods; Section 4 describes the major concerns and
+challenges that may motivate further work in gradient based explanations; Section 5 draws the
+conclusion.
+2
+GRADIENT BASED FEATURE ATTRIBUTION
+In this section, we classify gradients based feature attribution into four groups: vanilla gradients
+based explanation, integrated gradients based explanation, bias gradients based explanation, and
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+4
+Yongjie wang, et al.
+Gradients Based Feature Attribution
+Vanilla Gradients
+Integrated Gradients
+Bias Gradients
+PostProcessing
+Fig. 2. Taxonomy of gradient based feature attribution.
+Table 1. Notation table.
+Notation
+Meaning
+𝑓 (·)
+a trained neural network
+𝑓𝑐 (·)
+probability or logits of the class 𝑐
+x ∈ R𝑑
+an input instance
+𝑥𝑖
+the 𝑖-th feature of x
+𝐹 (·)
+a predicted class, i.e., 𝐹 (x) = arg max𝑐 𝑓𝑐 (x)
+a ∈ R𝑑
+a feature importance vector of x
+𝑎𝑖
+the importance score of the 𝑖-th feature
+𝑔(𝑓 , ·) or 𝑔(·)
+a feature attribution method
+ˆx ∈ R𝑑
+the baseline in integrated gradients based methods
+𝛾(·)
+the integral path in integrated gradients based methods
+𝑊 𝑙
+weights of layer 𝑙
+𝑏𝑙
+bias of layer 𝑙
+𝑧𝑙
+intermediate feature of layer 𝑙
+𝑅𝑙
+the relevance score of layer 𝑙
+𝜙(·)
+the activation function, e.g., ReLU
+postprocessing for denoising, as shown in Figure 2. Vanilla gradients based explanation aims to
+explain model prediction with gradients (variants of gradients) through a backward pass. Integrated
+gradients based explanation refers to the methods that accumulate gradients along a path between
+a baseline point and the input. Bias gradients based explanation also considers the contribution
+of bias terms, and distributes the bias contribution to input features in conjunction with input
+gradients. At last, we discuss two post-processing methods that enhance the empirical quality
+of almost all gradients based explanations by adding noise to the input. Notations used in the
+following content are summarized in Table 1.
+2.1
+Preliminary
+For a dataset D = {x𝑖, y𝑖},𝑖 ∈ {1, 2, · · · , |D|}, a neural network model is trained to minimize the
+empirical loss between 𝑓 (x𝑖) and y𝑖. Without loss of generality, we write a deep neural network
+model as,
+𝑓 (x) = 𝑊 𝑚𝜙(𝑊 𝑚−1𝜙(...𝜙(𝑊 1x + 𝑏1)...) + 𝑏𝑚−1) + 𝑏𝑚
+(1)
+where 𝑊 𝑖 and 𝑏𝑖 are trainable weights and bias term at layer 𝑖 and 𝜙(·) is a differential non-linear
+activation function. This formulation can generalize to most of the current feed-forward network
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+Gradient based Feature Attribution in Explainable AI: A Technical Review
+5
+models. For example, convolutional layers are essentially matrix multiplication after arranging the
+image into columns via the “image to column” operation; average pooling can be viewed as a linear
+transformation with the same weights.
+Due to the huge number of parameters in the model, which undermines the comprehension
+of the prediction logic, the objective of feature attribution methods is to discover the important
+features of x ∈ R𝑑 to the prediction, and their respective importance scores 𝑎𝑖. The objective is
+formally defined as,
+Definition 2.1 (Feature Attribution). Given a black-box model 𝑓 : X ⊆ R𝑑 → Y which makes a
+prediction y ∈ Y for a given input x ∈ X, a feature attribution method 𝑔 : 𝑓 × R𝑑 → R𝑑 calculates
+the importance scores 𝑔(𝑓 , x) for a given instance x, which measures the contribution/relevance of
+the instance x’s feature values to the prediction 𝑓 (x).
+For simplicity, we write 𝑔(𝑓 , x) by 𝑔(x) without loss of clearance. Given an input x = [𝑥1,𝑥2, ...,𝑥𝑑],
+a feature importance method returns a feature importance vector a = [𝑎1,𝑎2, ...,𝑎𝑑], where a help
+understand how the prediction 𝑓 (x) is made. In the domain of computer vision, the vector a can
+be visually represented through a heatmap, a.k.a. saliency map, effectively highlighting salient
+areas within the input image, which provides a clear and interpretable visualization for human
+evaluators.
+However, determining the optimal importance vector a is challenging and may even be impossible
+without imposing external constraints. On one hand, there are 𝑑 unknown variables and only one
+prediction, the underdetermined system have infinite number of solutions. On the other hand,
+the definition of importance lacks rigorous mathematical support. Generally, we define feature
+importance from a causal intuition, i.e., the removal of important features results in a sharp increase
+in the target prediction. Inevitably, the removal operation will bring unexpected noise and damage
+the prediction to some extent. It is challenging to disentangle the underlying reasons for the drop
+in prediction, whether stemming from the removal of important features or introduced noise.
+As calculating the importance vector is difficult, a commonly adopted approach [8, 60, 77, 84] is
+to incorporate several prior axioms that a high-quality method should satisfy, which helps constrain
+the search for the importance vector. Need to note, these axioms, while necessary and desirable,
+may not be sufficient conditions to induce any meaningful and useful explanations if relying solely
+on them. In the following, we introduce some widely accepted axioms.
+• Explainability. It refers to the ability to provide insights into how a model arrives at a specific
+prediction or decision. Conventionally, we depict feature importance scores using a saliency
+map in computer vision and natural language processing, which highlights areas of interest
+for easy interpretation by humans.
+• Completeness [84], a.k.a., “conservative” in [60], “summation-to-delta” in [77]. The sum of
+attribution scores a ∈ R𝑑 should equal the prediction score 𝑓 (x) or the prediction difference
+between 𝑓 (x) and 𝑓 (ˆx), shown as follows,
+𝑓 (x) =
+𝑑
+∑︁
+𝑖
+𝑎𝑖, or , 𝑓 (x) − 𝑓 (ˆx) =
+𝑑
+∑︁
+𝑖
+𝑎𝑖
+(2)
+• Sensitivity [77, 84]. If modifying a feature results in a different prediction, that feature should
+have a non-zero attribution score. In addition, if a model is independent on a particular
+feature, the attribution score for that feature should be zero.
+• Implementation invariance [84]. Two functionally equivalent models(regardless of the internal
+implementation details) should have the same attribution results for the same instance. One
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+6
+Yongjie wang, et al.
+can adopt the method outlined in [44] and establish two functionally equivalent models to
+verify the satisfaction of this property.
+• Linearity. Suppose that a model 𝑓 can be linearly decomposed into two models 𝑓1 and 𝑓2,
+i.e., 𝑓 = 𝑤1𝑓1 + 𝑤2𝑓2. It requires the attribution scores should preserve the same linearity,
+𝑔(𝑓 , x) = 𝑤1𝑔(𝑓1, x) + 𝑤2𝑔(𝑓1, x).
+• Symmetry preservation. Two features are symmetric if swapping them does not change the
+prediction. If all inputs have identical values for symmetric features and baselines also have
+identical values for symmetric features, then an attribution method should assign the identical
+importance scores on symmetric features.
+2.2
+Vanilla Gradients based Explanation
+Gradients of the model prediction with respect to the input reflect how the prediction behaves
+in response to infinitesimal changes in inputs. As gradients serve as a local approximation of the
+feature coefficients, directly using gradients for explaining the model is a reasonable starting point.
+Here, we refer to these explanations simply derived from gradients as “vanilla gradients based
+explanations.”
+Backpropagation[79]. Simonyan et al. proposed an image-specific class saliency visualization.
+For a given image x0, the model returns a prediction score 𝑓𝑐 (x0) of a class 𝑐. Backpropagation uses
+the first-order Taylor expansion to approximate the model 𝑓 in the neighbourhood of x0,
+𝑓𝑐 (x) = 𝑤𝑇 x + 𝑏
+(3)
+𝑤𝑇 can be viewed as the local feature coefficient on the prediction 𝑓𝑐 (x), specifically,
+𝑤 = 𝜕𝑓𝑐 (x)
+𝜕x
+
+x0
+(4)
+For a pixel (𝑖, 𝑗) with Red, Green, and Blue (R, G, B) channels, it takes the maximum of the absolute
+values for each pixel, i.e., 𝑚𝑎𝑥𝑐|𝑤 (𝑖,𝑗,𝑐)|. Similarly, Gevrey et al. [19] also propose to consider both
+the gradients and the square of gradients to explain the model.
+Deconvolutional network (deconvnet) [95]. Deconvnet starts with an activation at a specified
+layer and maps the activation back to the input space, to demonstrate what input pattern activates
+this neuron. During activation inversion, it replaces the max pooling layer in the forward pass
+with the unpooling operation by recording the locations of maxima, the convolution layer with a
+deconvolution layer by transposing the filters, and keeps the rectification units (ReLU) to merely
+allow the positive signal to pass. To eliminate the interference of other neurons in that layer,
+it first sets all other activations to zero, then iteratively passes the modified feature map to the
+replaced deconvnet layers until it reaches the input space. A general framework that generalizes to
+backpropagation and deconvnet can be found in SaliNet [55].
+Guided backpropagation [81]. Springenberg et al. introduced a straightforward network ar-
+chitecture that substitutes the max pooling layer with a convolutional layer (with stride) without
+compromising accuracy. Considering “deconvnet” does not perform well without max-pooling lay-
+ers, they proposed a novel visualization method, named guided backpropagation. When propagating
+through the Rectified Linear Units (ReLUs), it zeros out the entries whose values are negative in
+both the forward pass and backward pass.
+Rectified Gradient (RectGrad) [40]. Kim et al. hypothesize that the noise may originate from
+irrelevant features have positive pre-activated values when they pass through the ReLUs . When
+we compute gradients with backpropagation, these unrelated features have non-zero gradients.
+Consequently, they propose a thresholding method that enables gradients to propagate through
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+Gradient based Feature Attribution in Explainable AI: A Technical Review
+7
+1
+-1
+5
+2
+-1
+-7
+-3
+2
+4
+1
+0
+5
+2
+0
+0
+0
+2
+4
+b) Forward Pass
+backpropagation:
+deconvnet:
+guided
+backpropagation:
+RectGrad:
+a)
+c)
+backpropagation:
+deconvnet:
+guided
+backpropagation:
+RectGrad:
+, where 
+,
+,
+, e.g., 
+Input image 
+0.8
+0.1
+0
+Feature 
+importance
+0.8
+0.1
+0
+Forward pass
+Backward pass
+activation:
+d) Backward Pass
+-2
+3
+-1
+6
+-3
+1
+2
+-1
+3
+0
+3
+0
+6
+0
+1
+2
+0
+3
+-2
+3
+-1
+6
+-3
+1
+2
+-1
+3
+0
+0
+0
+6
+0
+0
+0
+0
+3
+-2
+3
+-1
+6
+-3
+1
+2
+-1
+3
+0
+0
+0
+6
+-3
+1
+0
+0
+3
+-2
+3
+-1
+6
+-3
+1
+2
+-1
+3
+-2
+0
+-1
+6
+0
+0
+0
+-1
+3
+Rules
+Fig. 3. The differences among backpropagation, deconvolutional network, guided backpropagation, and RectGrad
+lie in the implementation of ReLU in the backward pass.
+ReLUs only if their importance scores surpass a specified threshold. Specifically,
+𝑅(𝑙)
+𝑖
+= (𝑧(𝑙)
+𝑖
+∗ 𝑅(𝑙+1)
+𝑖
+> 𝜏) · 𝑅(𝑙+1)
+𝑖
+(5)
+Here, 𝑧(𝑙)
+𝑖
+represents the activated value after ReLU, and 𝜏 is the threshold set to the 𝑞𝑡ℎ percentile
+of each entry importance at layer 𝑙.
+The comparison among the backpropagation, deconvolutional network, guided backpropagation
+and RectGrad is summarized in Figure 3. The major difference lies in the ways to process back-
+propagation through the ReLU layer. Backpropagation uses the gradients w.r.t. the input instance,
+retaining the signal only when the inputs of ReLU are positive in the forward pass. Deconvnet and
+Guided Backpropagation employ a variant of gradients. Deconvnet leverages ReLUs to filter out
+negative gradients during the backward pass and Guided Backpropagation combines the strategies
+of Backpropagation and Deconvnet simultaneously. RectGrad filters out certain entries whose values
+are below a threshold. A clear drawback of Deconvnet and Guided Backpropagation is their inability
+to identify the negative influence on the output.
+Gradient × Input [4, 77]. Layer-wise Relevance Propagation (LRP) [6] computes the relevance
+score by redistributing the prediction score by some predefined rules layer by layer. However,
+researchers [4, 77] have observed that 𝜖-LRP is equivalent, within a scaling factor, to a feature-wise
+product between the input and its gradients, if numerical stability is not considered.
+Gradient-weighted Class Activation Mapping (Grad-CAM) [74]. Prior studies [64, 99] have
+shown that CNNs can proficiently localize objects of interest solely under the supervision of image-
+level labels. Class Activation Mapping (CAM), as introduced by [100], is a technique to identify
+discriminative regions that the model use to make a prediction, through the linearly weighted
+summation of activation maps from the last convolution layer. It can be formulated under the
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+8
+Yongjie wang, et al.
+following equation,
+𝑔𝐶𝐴𝑀 (x) = 𝑅𝑒𝐿𝑈 (
+𝐾
+∑︁
+𝑘=1
+𝜔𝑘𝐴𝑘)
+(6)
+where 𝐴𝑘 is 𝑘-th channel of the activation map of last convolution layer, which can be obtained
+in a forward pass, and 𝜔𝑘 is the importance of each channel. Because CAM requires the explicit
+definition of a global pooling layer for computing 𝜔𝑘, Grad-CAM [74] introduce a general method
+that uses the gradients w.r.t. the activation map 𝐴𝑘 to measure the channel importance, i.e.,
+𝜔𝑘 = 𝐺𝑃( 𝜕𝑓𝑐 (x)
+𝜕𝐴𝑘
+)
+(7)
+Here, 𝐺𝑃(·) is the global average pooling operator. Extending Grad-CAM, there are several methods
+proposed, e.g., Grad-CAM++ [12], Smooth Grad-CAM++ [63]. Since these methods directly utilize
+gradients and their variants to acquire channel importance of the last convolutional layer, we omit
+further description of them.
+In addition to above methods, numerous research incorporates the vanilla gradients to domain-
+specific models or tasks [49, 67]. As we mainly focus on algorithm details, the domain-specific
+applications are not in the scope of our discussion. Some explanation methods adopt vanilla
+gradients as sub-components within their algorithms (for example, Relative Sectional Propagation
+(RSP) [61] utilizes gradients w.r.t. the last convolution layer as the initialization of relevance
+propagation; SGLRP [33] uses gradients of probability after softmax w.r.t. intermediate features to
+suppress relevance propagation of non-target classes). We also omit these methods because their
+primary contributions do not involve enhancing gradient based explanations.
+2.3
+Integrated Gradients based Explanation
+Gradients indicate the infinitesimal prediction changes resulted from infinitesimal feature changes.
+For an input x receiving the higher prediction, the tiny prediction change cannot reflect the
+reasons behind the prediction. In addition, vanilla gradients are susceptible to the saturation issue
+[83, 84], wherein the gradients of some features are close to 0, even if the model heavily depends
+on those features. Therefore, researchers introduce the baseline (a.k.a., reference point) from the
+counterfactual philosophy, where the baseline represents the absence or neutral of the current
+prediction. Integrated gradients based explanations typically accumulate gradients along a specified
+path from a baseline to the input point.
+Integrated Gradients (IG) [84]. Sundararajan et al. firstly propose the integrated gradients that
+satisfies a number of desired properties, like sensitivity, completeness, linearity and implementa-
+tion invariance. Mathematically, the gradient vectors of the model 𝑓 at all data points form the
+conservative vector field. According to the fundamental Gradient Theorem in line integrals [48],
+we have,
+𝑓 (𝛾(1)) − 𝑓 (𝛾(0)) =
+∫
+𝛾
+▽𝑓 (x) · 𝑑x
+(8)
+=
+∫
+𝛾
+𝑛
+∑︁
+𝑖=1
+𝜕𝑓 (x)
+𝜕𝑥𝑖
+𝑑𝑥𝑖
+(9)
+=
+𝑛
+∑︁
+𝑖=1
+∫
+𝛾
+𝜕𝑓 (x)
+𝜕𝑥𝑖
+𝑑𝑥𝑖
+(10)
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+Gradient based Feature Attribution in Explainable AI: A Technical Review
+9
+where 𝛾 : [0, 1] → 𝑅𝑑 is the smooth path function, and ▽ is the nabla operator, i.e., the gradients at
+a point x. The authors define the IG score of the 𝑖-th feature of x by,
+𝑔𝐼𝐺
+𝑖 (x) =
+∫
+𝛾
+𝜕𝑓 (x)
+𝜕𝑥𝑖
+𝑑𝑥𝑖
+(11)
+Obviously, the IG score of each feature 𝑖 heavily depends on the path function 𝛾. For simplicity,
+they choose the straight line from the baseline ˆx to input x, where a point in the path can be written
+as, 𝛾(𝑡) = ˆx + 𝑡(x − ˆx). Replacing 𝑑𝑥𝑖 with (𝑥𝑖 − ˆ𝑥𝑖)𝑑𝑡, we can obtain,
+𝑔𝐼𝐺
+𝑖 (x, ˆx) = (𝑥𝑖 − ˆ𝑥𝑖)
+∫ 1
+0
+𝜕𝑓 (𝛾(𝑡))
+𝜕𝑥𝑖
+𝑑𝑡 ≈ (𝑥𝑖 − ˆ𝑥𝑖) ×
+𝑚
+∑︁
+𝑘=1
+𝜕𝑓 (ˆx + 𝑘
+𝑚 (x − ˆx))
+𝜕𝑥𝑖
+× 1
+𝑚
+(12)
+With this approach, the attribution score of each feature can be calculated by accumulating the
+gradients of samples along the path. If a straight line is adopted, IG is also symmetry-preserving.
+Hesse et al. [29] demonstrated that for a nonnegatively homogeneous model, Integrated Gradients
+(IG) with a zero baseline is equivalent to Input×Gradient [77].
+Blur Integrated Gradients (BlurIG) [92]. BlurIG aims to explain the prediction by accumulating
+gradients from both the frequency and space domains. Specifically, the path of BlurIG is defined by
+successively blurring the input image with a Gaussian blur filter. Formally, let x(𝑝,𝑞) denotes a
+pixel at the location (𝑝,𝑞), the discrete convolution of the input signal with the 2D Gaussian kernel
+with variance 𝜎 can be written as,
+𝐿(𝑝,𝑞, 𝜎) =
+∞
+∑︁
+𝑚=−∞
+∞
+∑︁
+𝑛=−∞
+1
+𝜋𝜎 𝑒
+−(𝑝2+𝑞2)
+𝜎
+x(𝑝 − 𝑚,𝑞 − 𝑛)
+(13)
+Then, the final attribution score at location (𝑝,𝑞) of BlurIG is computed as,
+𝑔𝐵𝑙𝑢𝑟𝐼𝐺 (𝑝,𝑞) =
+∫ 0
+𝜎=∞
+𝜕𝐹 (𝐿(𝑝,𝑞, 𝜎))
+𝜕𝐿(𝑝,𝑞, 𝜎)
+𝜕𝐿(𝑝,𝑞, 𝜎)
+𝜕𝜎
+𝑑𝜎
+(14)
+In the limit as 𝜎 approaches infinity, the maximally blurred image converges to the mean value
+across all locations. Setting 𝜎 = 0 corresponds to the input image itself. In this way, BlurIG avoids
+the explicit definition of baseline, which is difficult to choose in some applications. Furthermore,
+BlurIG has the potential to alleviate artifacts that may arise during interpolation when new features
+are introduced along the integral line.
+Expected Gradients [83]. The baseline in Integrated Gradients (IG) represents the absence of
+the target object, which can be challenging to explicitly define. By default, IG chooses the all-zero
+vector as the baseline. However, in cases where the body of the target object is black, IG fails to
+highlight the body area effectively. Furthermore, the value 0 often has a unique meaning in tabular
+datasets and may not appropriately represent the concept of missingness.
+There are alternative choices for baselines in Integrated Gradients (IG), such as an image with
+the maximum distance from the current input, a Gaussian-blurred image, an image with random
+pixel values, and black & white baseline [38]. Nevertheless, each baseline choice has its advantages
+and disadvantages. A natural way is to average the attribution scores of multiple baselines that are
+sampled from a baseline distribution 𝐷.
+𝑔𝐸𝐺
+𝑖
+(𝑓 , x) =
+∫
+ˆx
+𝑔𝐼𝐺
+𝑖 (x, ˆx) × 𝑝𝐷 (ˆx)𝑑 ˆx
+(15)
+here, 𝑔𝐼𝐺
+𝑖 (x, ˆx) denotes the attribution score of 𝑖-th feature from IG with a baseline ˆx, 𝑝𝐷 (·) is the
+density function of baseline distribution.
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+10
+Yongjie wang, et al.
+The integral over the baseline distribution is approximated with Riemann integration. Specifically,
+expected gradients simply sum the gradients over 𝑘 samples from the 𝑘 straightline paths with the
+following formula,
+𝑔𝐸𝐺
+𝑖
+(𝑓 , x) = 1
+𝑘
+𝑘
+∑︁
+𝑗=1
+(𝑥𝑖 − ˆ𝑥 𝑗
+𝑖 ) × 𝜕𝑓 (ˆx𝑗 + 𝛼𝑗 (x − ˆx𝑗))
+𝜕𝑥𝑖
+(16)
+where ˆx𝑗 is the 𝑗-th baseline from baseline distribution 𝐷 and 𝛼𝑗 ∼ 𝑈 (0, 1) is sampled from the
+uniform distribution to determine the interpolated datapoint between x and ˆx.
+Split Integrated Gradients (Split IG) [56]. In integrated gradients, the interpolated images
+along the path are determined by the scaling factor 𝛼. A common phenomenon is that the model
+prediction sharply spikes with 𝛼 and then plateaus as 𝛼 scales up to 1. The range of 𝛼 wherein
+the model prediction exhibits minimal variation is denoted as the saturated region. Miglani et al.
+observed that the accumulated gradients within the saturation regions constitute a non-negligible
+contribution of the final importance scores of IG, even though these regions have little impact
+on improving the model prediction. As suggested by its name, Miglani et al. split the integral of
+IG into two parts: the non-saturated region where the prediction increases substantially, and the
+saturation region, controlled by a hyperparameter 𝜑,
+𝛼∗ = inf{𝛼 ∈ [0, 1], s.t.,𝑓 (ˆx + 𝛼(x − ˆx)) > 𝑓 (ˆx) + 𝜑(𝑓 (x) − 𝑓 (ˆx))}
+(17)
+Based on their observation, Split IG merely integrates the gradient in the non-saturated region
+where 𝛼 < 𝛼∗.
+Integrated Hessians [34]. While much research has concentrated on elucidating the significance
+of individual features for the present prediction, the exploration of explaining feature interactions
+has received comparatively less attention. Integrated Hessians treat the integrated gradient method
+𝑔𝐼𝐺 (𝑓 , x) as a differential function, and explain the importance of feature 𝑖 in terms of the feature 𝑗
+with second-order derivatives,
+Γ𝑖,𝑗 (x) = 𝑔𝐼𝐺
+𝑗 (𝑔𝐼𝐺
+𝑖 (𝑓 , x), x)
+(18)
+Here, we write the IG method by 𝑔𝐼𝐺 (𝑓 , x), omitting the baseline notation to emphasize the differ-
+ences in the differential function. For a differential model 𝑓 , Γ𝑖,𝑗 (x) has the following mathematical
+forms,
+Γ𝑖,𝑗 (x) = (𝑥𝑖 − ˆ𝑥𝑖)(𝑥𝑗 − ˆ𝑥𝑗) ×
+∫ 1
+𝛽=0
+∫ 1
+𝛼=0
+𝛼𝛽 𝜕2𝑓 (ˆx + 𝛼𝛽(x − ˆx))
+𝜕𝑥𝑖𝜕𝑥𝑗
+𝑑𝛼𝑑𝛽,
+𝑖 ≠ 𝑗
+(19)
+= (𝑥𝑖 − ˆ𝑥𝑖)2 ×
+∫ 1
+𝛽=0
+∫ 1
+𝛼=0
+𝛼𝛽 𝜕2𝑓 (ˆx + 𝛼𝛽(x − ˆx))
+𝜕𝑥𝑖𝜕𝑥𝑗
+𝑑𝛼𝑑𝛽
+𝑖 = 𝑗
+(20)
++ (𝑥𝑖 − ˆ𝑥𝑖) ×
+∫ 1
+𝛽=0
+∫ 1
+𝛼=0
+𝜕𝑓 (ˆx + 𝛼𝛽(x − ˆx))
+𝜕𝑥𝑖
+𝑑𝛼𝑑𝛽
+The Riemann integration of the above equation is computed by,
+Γ𝑖,𝑗 (x) = (𝑥𝑖 − ˆ𝑥𝑖)(𝑥𝑗 − ˆ𝑥𝑗) ×
+𝑘
+∑︁
+ℓ=1
+𝑚
+∑︁
+𝑝=1
+ℓ × 𝑝
+𝑘 × 𝑚 ×
+𝑓 (ˆx + ℓ×𝑝
+𝑘×𝑚 (x − ˆx))
+𝜕𝑥𝑖𝜕𝑥𝑗
+×
+1
+𝑘 × 𝑚
+(21)
+Theoretical proof demonstrates that the Integrated Hessian satisfies axioms similar to those fulfilled
+by integrated gradients.
+Integrated Directional Gradients (IDG) [78]. Sikdar et al. propose IDG to explain the model
+output by computing importance scores for groups of words in NLP domain. The groups of words
+refer to meaningful subsets of input tokens, which are obtained through the constituency parse
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+Gradient based Feature Attribution in Explainable AI: A Technical Review
+11
+tree of input sentences. Given a group of words 𝑆, the IDG score is calculated by integrating the
+gradients with respect to the group of features along the straight line from the baseline ˆ𝑥 to the
+input 𝑥, shown as follows,
+IDG(𝑆) =
+∫ 1
+𝛼=0
+▽𝑆 𝑓 (ˆx + 𝛼(x − ˆx)) 𝑑𝛼
+(22)
+Where ▽𝑆 𝑓 = ▽𝑓 · ˆ𝑧𝑠 and
+ˆ𝑧𝑠 =
+𝑧𝑠
+||𝑧𝑠||
+(23)
+𝑧𝑠
+𝑖 =
+(
+𝑥𝑖 − ˆ𝑥𝑖
+if 𝑥𝑖 ∈ 𝑆
+0
+otherwise
+(24)
+Then a dividend 𝑑(𝑆) is calculated by normalizing the absolute values of IDG(𝑆) over all meaningful
+subsets. Finally, the importance score of a feature group 𝑆 is calculated by adding up the “dividends”
+of all the subsets of 𝑆, i.e., {𝑇 |𝑇 ⊆ 𝑆} , including 𝑆 itself.
+Guided Integrated Gradients (Guided IG) [39]. Kapishnikov et al. demonstrated that noisy
+saliency maps are caused by the following factors: (a) the high curvature of a model’s decision surface
+(b) the reference point and integral path and (c) approximation of Riemann integration. The authors
+observe that for an interpolated image x𝑖 in saturated regions (e.g., 0.3 < 𝛼 < 1), the magnitude
+of gradients w.r.t. the input can be high even if the multiplication of gradients and directional
+derivatives contributes little to the prediction differences, i.e., 𝜕𝑓 (x𝑖 )
+𝜕x𝑖
+× (x−ˆx)
+𝑚
+≪ 𝑓 (x) − 𝑓 (ˆx) in
+Eqn.(12). In other words, spurious pixels that have high gradients could accumulate non-zero
+attributions in the path integral. To avoid gradient integration in nearby points with high curvature
+, guided IG (GIG for abbreviation) introduces an adaptive integral path that has the lowest absolute
+value of partial derivatives from the baseline to input. Specifically, the adaptive path is identified
+by minimizing the overall absolute gradients for all segments from all possible paths,
+𝛾𝐺𝐼𝐺 = arg min
+𝛾 ∈Γ
+𝑁
+∑︁
+𝑖=1
+∫ 1
+𝛼=0
+| 𝜕𝑓 (𝛾(𝛼))
+𝜕𝛾𝑖 (𝛼)
+𝜕𝛾𝑖 (𝛼)
+𝜕𝛼
+|𝑑𝛼
+(25)
+where Γ contains all possible path from the baseline to input x. After determining the optimal path
+𝛾𝐺𝐼𝐺, guided IG accumulates the gradients along the path, similar to IG,
+𝑔𝐺𝐼𝐺
+𝑖
+(x) =
+∫ 1
+0
+𝜕𝑓 (𝛾𝐺𝐼𝐺 (𝛼))
+𝜕𝛾𝐺𝐼𝐺
+𝑖
+(𝛼)
+𝜕𝛾𝐺𝐼𝐺
+𝑖
+(𝛼)
+𝜕𝛼
+𝑑𝛼
+(26)
+The search for the optimal path 𝛾𝐺𝐼𝐺 is impossible without knowing the Γ in advance. As such,
+Kapishnikov et al. proposed a greedy strategy to search the best point with the lowest absolute
+values of partial derivative step by step. At each step, starting from a baseline image, it finds a
+subset S (e.g., 10%) of features whose absolute partial derivatives are lowest, then restores pixels in
+S to their corresponding values in the input image, and stops until all pixel intensity are same to
+the input.
+Adversarial Gradient Integration (AGI) [65]. Considering (1) IG may produce inconsistent
+explanations with different baselines; (2) the choice of uninformative baseline lacks justification
+in certain tasks, AGI introduces a baseline-free method. In particular, AGI adopts the gradient
+descending to search an adversarial example of a class 𝑗 (different from the current prediction)
+along the curve of steepest descent, and accumulates the gradients in the descending steps.
+𝑔𝐴𝐺𝐼
+𝑖
+(x) =
+∫
+𝑡𝑖𝑙 𝑎𝑑𝑣
+− ▽x𝑖 𝑓 (x) ·
+▽x𝑖 𝑓𝑗 (x)
+| ▽x𝑖 𝑓𝑗 (x)|𝑑𝛼
+(27)
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+12
+Yongjie wang, et al.
+“𝑡𝑖𝑙 𝑎𝑑𝑣” means it stops until an adversarial example is found or reaches the predefined maximum
+step. The number of non-target classes may be huge, and then AGI averages the attribution score
+over multiple randomly selected classes.
+Boundary-based Integrated Gradients (BIG) [91]. Wang et al. theoretically and empirically
+conclude that gradients based explanations lack robustness because input gradients deviate from
+the normal vector of nearby decision boundary. For the commonly used ReLU networks, the feature
+space is divided into many polytopes depending on the activation patterns of ReLUs, and the
+decision boundaries only contain a set of hyperplane segments of certain polytopes. Given an
+input x, assuming it lies within the polytope 𝑃, the model can be expressed as a local linear model
+𝑓 (𝑥) = 𝑤𝑃x +𝑏𝑃. The gradients 𝑤𝑃 may fail to explain the local behavior of model decision process
+if the polytope is far from the decision boundary. Consequently, the authors introduce the closest
+adversarial example x′ of x to facilitate the explanation of 𝑓 (x). BIG is defined by substituting the
+baseline of Integrated Gradients (IG) with the adversarial example and subsequently accumulating
+gradients in a manner similar to IG.
+𝑔𝐵𝐼𝐺
+𝑖
+(x) = 𝑔𝐼𝐺
+𝑖 (x, x′)
+(28)
+where x′ is the closest adversarial example of x and ∨x𝑚, ||x𝑚 − x|| < ||x′ − x|| → 𝐹 (x) = 𝐹 (x𝑚).
+Furthermore, the gradients of x′ can be employed to augment the conventional vanilla gradients
+based explanation, termed the Boundary-based Saliency Map (BSM).
+Important Direction Gradient Integration (IDGI) [93]. A common challenge in integrated
+gradients based methods is the presence of noisy explanations during integration. Yang et al. point
+out one reason is that the multiplication between the gradient and the path segment in each
+step of Riemann integration. The gradient reflects the steepest direction of the model prediction.
+However, the path segment can be decomposed by the noise direction and important direction.
+The multiplication between the noise direction and gradient has no effect on the model prediction
+but introduces noise into the saliency map. To address this issue, they propose the IDGI, which
+computes the feature attribution score in each line segment from x𝑗 to x𝑗+1 by,
+𝑔𝐼𝐷𝐺𝐼
+𝑖,𝑗
+= ℎ𝑖 × ℎ𝑖 × 𝑑
+ℎ · ℎ
+,
+(29)
+ℎ = 𝜕𝑓 (x𝑗)
+𝜕𝑥
+,
+(30)
+𝑑 = 𝑓 (x𝑗+1) − 𝑓 (x𝑗)
+(31)
+where 𝑔𝐼𝐷𝐺𝐼
+𝑖,𝑗
+is the importance score of feature 𝑖 at the step 𝑗. IDGI directly disregards the multipli-
+cation between the noise direction and gradient, focusing solely on the important direction that
+aligns with the gradient. Summation of Eqn (31) over all segments in a path will obtain the final
+attribution score.
+Negative Flux Aggregation (NeFLAG) [50]. Li et al. reformulates the gradient accumulation
+via divergence and flux in vector field. Mathematically, the gradient of model prediction w.r.t
+input instances form the vector field. IG [84] accumulates gradients along a single line while
+AGI [65] aggregates gradients over multiple integral paths to the input, resulting in improved
+performance. An extended idea is to accumulate all possible paths, which motivates the analysis
+from the perspective of divergence and flux. Let F = ▽𝑥 𝑓 be the vector field, the divergence can be
+defined by the limit of the ratio of flux through an infinitesimal surface enclosure 𝑆 that encloses x
+to the volume 𝑉 ,
+div F|𝑥 = ▽ · F = lim
+𝑉 →0
+1
+|𝑉 |
+∯
+𝑆 (𝑉 )
+F · ˆn𝑑𝑆
+(32)
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+Gradient based Feature Attribution in Explainable AI: A Technical Review
+13
+where 𝑆(𝑉 ) is the boundary of 𝑉 , and ˆn is the outward unit normal of 𝑆(𝑉 ). To interpret a model
+prediction, NeFLAG integrates the divergence in the neighborhood 𝑉 (x) of the input x. According
+to the Divergence theorem,
+∭
+𝑉
+(▽ · F)𝑑𝑉 =
+∯
+𝑆
+(F · ˆn)𝑑𝑆
+(33)
+The total divergence in the volume 𝑉 (x) can be converted by calculating the flux through the
+surface 𝑆. As the goal is to explain why the model made a particular prediction, they focus on the
+negative direction where the current prediction decreases due to the absence of certain features.
+Finally, NeFLAG is defined as,
+ˆ𝑤 =
+∯
+𝑆 −𝑥
+(F ⊙ ˆn)𝑑𝑆
+(34)
+where 𝑆 −
+𝑥 is a set of points ˜x on the 𝜖-sphere surface centered at x where the flux is negative, and
+ˆ𝑤 is the feature importance vector. At last, sampled points ˜x are found using the gradient descent
+algorithm from x, similar to AGI [65].
+2.3.1
+Summary. An evident drawback of the aforementioned methods is the presence of noise in
+irrelevant features and researchers [39, 56] posit that the noise primarily stems from the inadequacies
+in method design rather than the model inherently relying on noise for predictions. Therefore,
+the main theme of integrated gradients based studies is to identify potential sources of noise and
+propose effective solutions to address them., which include: (1): the choice of integral path (BlurIG
+[92], Expected IG [83] Split IG [56], NeFLAG [50]); (2) the high curvature of a model’s decision
+surface (Guided IG [39], BIG [91]), a.k.a, discontinuous gradients; (3) the Riemann approximation
+at each step (AGI [65], IDGI [93]). Nevertheless, visual noise still persists, prompting us to propose
+more effective approaches in future endeavors.
+2.4
+Bias Gradients based Explanation
+Vanilla gradients and integrated gradients have garnered significant attention in understanding
+model behaviors, however, it is imperative to note that the bias term also plays a pivotal role in
+shaping the final output, and its influence is intricately determined by the activation patterns of
+ReLUs.
+For an input x, the DNN in Eqn (1) can be written as a piecewise-linear model [88],
+𝑓 (x) =
+𝑚
+Ö
+𝑖=1
+𝑊 𝑖
+x + (
+𝑚
+∑︁
+𝑗=2
+𝑚
+Ö
+𝑖=𝑗
+𝑊 𝑖
+x𝑏 𝑗−1
+x
++ 𝑏𝑚)
+(35)
+where 𝑊 𝑖
+x is modified from 𝑊 𝑖 by zeroing out certain rows, and 𝑏𝑖
+x is a scaled version of 𝑏𝑖. 𝑊 𝑖
+x
+and 𝑏𝑖
+x depend on the activation pattern 𝜙𝑖 (𝑊 𝑖𝑧𝑖 + 𝑏𝑖) at the layer 𝑖 (𝑧𝑖 is the input at layer 𝑖). In
+particular,
+𝑊 𝑖
+x[𝑝] = 𝑐𝜙𝑖 (𝑊 𝑖𝑧𝑖+𝑏𝑖 )[𝑝] ·𝑊 𝑖
+(36)
+𝑏𝑖
+x[𝑝] = 𝑐𝜙𝑖 (𝑊 𝑖𝑧𝑖+𝑏𝑖 )[𝑝] · 𝑏𝑖
+(37)
+If 𝜙(·) is the ReLU activation function, the 𝑐 is the indicator function to set the output of node 𝑝 to
+0 if not activated. In DNN models, it has been observed that sparse representations are acquired to
+facilitate straightforward discrimination by the classifier [22]. This observation suggests that within
+deep layers, fewer ReLUs are activated, consequently leading to diminished gradient magnitudes
+owing to the multiplication of a series of indicator functions. This phenomenon is formally referred
+to as “gradient saturation” where 𝑏𝑖
+x substantially contributes to the final output. In [88], they
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+14
+Yongjie wang, et al.
+observe that only using the bias term, the model still achieves more than 30% accuracy on CIFAR-
+100 test set. Therefore, decomposing the contribution of bias terms to input features should be
+investigated.
+FullGrad [82]. Srinivas and Fleuret propose to decompose the output prediction into input
+gradients and bias gradients simultaneously,
+𝑓 (x; b) = ▽x𝑓 (x; b)𝑇 x + ▽b𝑓 (x; b)𝑇 b
+(38)
+The ▽x𝑓 (x; b) is the gradient w.r.t. the input x, which is the same to previous methods [79]. The
+▽b𝑓 (x; b) is the gradient w.r.t. the bias terms, including the explicit biases in convolutional and fully
+connected layers, and implicit biases in batch normalization layers. In a CNN, the bias parameters
+exhibit an identical spatial structure as the feature map due to the weight sharing and sliding
+window mechanism employed during convolution. Finally, we can visualize the bias contribution
+▽b𝑓 (x; b)𝑇 b by the saliency map after the post-processing, which is computed by,
+𝑆(x) = 𝜓 (▽x𝑓 (x; b)𝑇 x) +
+∑︁
+𝑙 ∈𝐿
+∑︁
+𝑐∈𝑐𝑙
+𝜓 ([▽b𝑓 (x; b)𝑇 b]𝑙
+𝑐)
+(39)
+Here 𝐿 denotes the number of convolutional layers, 𝑐𝑙 is the number of channels at layer 𝑙, and 𝜓 (·)
+is a series of post-processing operations, e.g., upsampling, abstract, and min-max normalization.
+Due to the down sampling in the forward pass, it becomes necessary to upsample ▽b𝑓 (x; b)𝑇 b to
+match the image size at each layer 𝑙. The absolute operator and min-max normalization procedures
+are employed, aligning with other visualization techniques. While FullGrad theoretically satisfies a
+set of desired properties, such as weak dependence and completeness, the practical implementation
+introduces a deviation by discarding the bias gradient in the fully connected layer and incorporating
+the upsampling operation. In addition, the adaptation of FullGrad to tabular and NLP tasks remained
+unknown.
+2.5
+Postprocessing for Denoising
+Visual noise is a prevalent issue in gradients based explanations. Here, we introduce two popular
+techniques to denoise derived explanations through postprocessing.
+SmoothGrad [80]. Smilkov et al. observes that in the vicinity of the input image, the derivative
+of the model prediction w.r.t. input fluctuates sharply, even though the natural images are visually
+indistinguishable from humans. They highlight that noise may emerge due to high local variations
+of gradients. Consequently, they propose a smoothing method that averages the gradients over
+samples in the vicinity of an input x, expressed mathematically as:
+ˆ𝑔𝑠 (𝑓 , x) = 1
+𝑁
+𝑁
+∑︁
+𝑖=1
+𝑔(𝑓 , x + 𝛿𝑖)
+(40)
+where ˆ𝑔𝑠 represents the smoothed explanation, 𝑁 is the number of samples, and 𝛿𝑖 ∼ N (0, 𝜎2) is
+the Gaussian noise exerting on the input with standard deviation 𝜎.
+VarGrad [3]. Similar to SmoothGrad, Adebayo et al. propose to compute the variance of expla-
+nations for samples in the vicinity of the input image for denoising,
+ˆ𝑔𝑣(𝑓 , x) = 1
+𝑁
+𝑁
+∑︁
+𝑖=1
+[𝑔(𝑓 , x + 𝛿𝑖) − ˆ𝑔𝑠 (𝑓 , x)]2
+(41)
+While both denoising methods can enhance gradients based explanations, Seo et al. [76] conclude
+that SmoothGrad does not smooth the gradient of the prediction function, and VarGrad captures
+higher-order partial derivatives rather than depends on the gradient of the prediction function.
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+Gradient based Feature Attribution in Explainable AI: A Technical Review
+15
+Gradients, Square Gradients (Ecological modelling)
+Backpropagation (ICLR), Deconvnet (ECCV)
+Guided Backpropagation  (ICLRW), LRP (Plos One)
+RectGrad (ICCVW), FullGrad (NeurIPS)
+Grad-CAM (ICCV) , Integrated Gradient (ICML), DeepLIFT (ICML), SmoothGrad
+(ICMLW)
+BlurIG (CVPR), Expected Gradients (Distill), Split IG (ICMLW)
+VarGrad (NeurIPS)
+Integrated Hessians (JMLR), Integrated Directional Gradients (ACL), Guided Integrated
+Gradients (CVPR), Adversarial Gradient Integration (IJCAI)
+Boundary-based Integrated Gradients (ICML)
+Important Direction Gradient Integration (CVPR), Negative Flux Aggregation
+(IJCAI)
+2003
+2014
+2015
+2016
+2017
+2018
+2019
+2020
+2021
+2022
+2023
+SaliNet (ECCV)
+Fig. 4. The chronological evolution of gradients based explanations is depicted in the publication timeline.
+2.6
+Summary
+We summarize the publication timeline of gradients based explanations in Figure 4. The timeline
+provides the publication years, aiding in understanding how each algorithm addresses issues of
+previous methods and introduces novelty in chronological order. It may help researchers compre-
+hend the latest advancements and cutting-edge developments, thereby enabling them to contribute
+further improvements to the field.
+3
+EVALUATION METRICS
+Researchers usually evaluate derived explanations from two aspects: explainability and faithfulness.
+Explainability refers to the capability of making model decisions understandable to humans. In
+particular, human assessment, fine-grain image recognition, and localization tests are adopted
+to determine whether the explanations align with user expectations. Faithfulness refers to the
+extent to which explanations accurately reflect the internal decision-making processes. Specifically,
+various ablation tests are used to evaluate faithfulness from the causal perspective. Additionally,
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+16
+Yongjie wang, et al.
+randomization tests are employed to assess whether explanations are dependent on model parame-
+ters and input instances. Regarding other metrics, e.g., algorithm efficiency and interactivity, which
+are tailored to specific research problems in XAI, we omit their details from our paper.
+3.1
+Human Evaluation
+Human evaluation is devised on the premise that when explanations from a method align with
+human domain knowledge and relevant experiences, users are more likely to readily accept and
+endorse this method [70, 74]. Therefore, researchers recruit human participants to provide scores
+on designated scales [41] or answer designed questions [62, 74] after reviewing given explanations.
+These subjective scores are reported as indicators of human acceptance for comparing different
+methods.
+Human evaluations have inherent drawbacks. Firstly, they are typically time-consuming and
+expensive. For example, the median hourly wage of Amazon Mechanical Turk was approximately 2
+US dollars in 2017 [27]. Secondly, the reproducibility of human evaluation is problematic due to the
+variability introduced by different participants in separate experiments. Another challenge is the
+need for specialized domain knowledge in certain evaluations. For instance, in the explanation ques-
+tionnaire on bullmastiff (an English breed of guard dog) recognition, participants not well-versed in
+zoology may assign a higher score when an explanation merely emphasizes areas associated with
+general dogs, rather than highlighting distinguishable features specific to a Bullmastiff. Crucially, it
+is imperative to contemplate whether explanations should necessarily conform to human intuition.
+3.2
+Localization Tests
+For object detection tasks in computer vision, such as PASCAL VOC [15] and COCO [52], where
+bounding boxes are annotated, location annotation can be utilized to evaluate whether saliency
+maps genuinely highlight the target objects.
+Pointing game [68, 96]. In the pointing game, the maximum importance point is computed
+over the saliency map. A hit is recorded if the maximum point falls within the bounding box of
+the correctly predicted category; otherwise, a miss is counted. The pointing game accuracy is
+computed by the ratio of hits, i.e., #hits / (#hits + #misses). The overall performance is reported by
+averaging all scores over different categories on all test samples. In an extended pointing game
+[24], a thresholding strategy is employed to identify foreground areas covering 𝑝% of the total
+energy, where the total energy is the sum of all importance values in the saliency map. A hit is
+recorded if the foreground is within the bounding box annotation. A curve is plotted where the
+𝑥 axis represents 𝑝 and the 𝑦 axis represents the pointing game accuracy. The Area Under the
+Curve (AUC) score is reported to measure the localization performance. In addition, Wang et al.
+[86] introduce the energy-based pointing game that is the total energy within the target bounding
+box divided by the total energy in the saliency map.
+Weakly supervised localization [100]. Given top-1 or top-5 predicted classes, we first generate
+the saliency map of each predicted class. Next, we find segments of regions whose importance
+value is above 20% of the max importance value with thresholding methods and then draw the
+bounding box that covers the largest connected component in each segment. With bounding boxes
+of a saliency map, localization error can be reported by calculating the IOU (intersection over
+union) with the ground truth. Finally, the average of location errors over the test dataset is reported
+to gauge the localization ability of an explanation method.
+Fine-grain Image Recognition [100]. Similar to the weakly supervised localization evaluation,
+Zhou et al. extracts the features within the bounding boxes and leverages the extracted features
+to train a linear SVM model. Compared with another model trained on the full images’ feature,
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+Gradient based Feature Attribution in Explainable AI: A Technical Review
+17
+the improved accuracy on the test set can validate the localization ability because the explanation
+method focuses on the areas of target objects and excludes irrelevant backgrounds.
+3.3
+Ablation Tests
+The localization test may fail to identify the reasons behind a model’s specific prediction when
+explanation methods merely recover input images from output [3]. For example, if a model erro-
+neously classifies a husky as a wolf due to the snow in the background, an explanation method,
+e.g., Guided Backpropagation [81] and Deconvnet [95], can still highlight the region of the husky
+due to partial input recovery. This means the model could incorrectly pass the localization test,
+attributing the misclassification to the husky rather than the actual cause, the snow in the back-
+ground. Therefore, researchers proposed the following evaluation metrics from causal perspectives.
+The intuition behind these metrics is drawn from conservation and deletion strategies. According
+to Zeiler and Fergus [95], preserving important features should sustain the model’s prediction,
+whereas removing them should significantly decrease the prediction accuracy.
+Average Drop (AD) and Average Drop in Deletion (ADD). Jung and Oh [37] proposed the
+average drop (AD) and the average drop in deletion (ADD), defined as follows.
+AD = 1
+𝑁
+𝑁
+∑︁
+𝑖=1
+max(0, 𝑓𝑐 (x) − 𝑓𝑐 (x𝑟))
+𝑓𝑐 (x)
+× 100
+(42)
+ADD = 1
+𝑁
+𝑁
+∑︁
+𝑖=1
+𝑓𝑐 (x) − 𝑓𝑐 (x𝑑)
+𝑓𝑐 (x)
+× 100
+(43)
+where 𝑓𝑐 (·) is the probability of predicted target 𝑐, x𝑟 = a ⊙ x denotes the reservation of important
+regions, and x𝑑 = (1 − a) ⊙ x denotes the removal of important regions. Here, ⊙ refers to the
+Hadamard product. A lower AD and ADD are better. Similarly, Jung and Oh also defined the
+Increase in Confidence (IC):
+IC = 1
+𝑁
+𝑁
+∑︁
+𝑖=1
+1[𝑓𝑐 (x)<𝑓𝑐 (x𝑟 )] × 100
+(44)
+which measures the increase in probability if we remove the irrelevant background. A higher IC is
+better. Nevertheless, we note that AD and ADD tend to favor explanations highlighting large areas
+of objective interests. We suggest considering the insertion/deletion score or ABPC below for a
+more fair evaluation.
+Insertion/Deletion Score [38, 66]. In a manner akin to AD and ADD, insertion and deletion
+scores depict the performance increase or decrease by progressively restoring or removing features
+in the order of importance. A probability curve can be plotted as a function of the number of
+features inserted/removed. In this regard, AD and ADD can be viewed as a specific point on the
+curve.
+Insertion score (a.k.a., Performance Information Curves (PICs) [38]). The process begins with an
+uninformative image, such as a Gaussian-blurred input image without any information relevant
+to the target prediction. It then sequentially adds back the top-𝑘 most important features of the
+input, as determined by an explanation method, and collects the model prediction for the inserted
+image. It repeats this procedure until all content of the original image is restored. The area under
+the prediction curve (AUC) during insertion process is named the insertion score. In [38], if the
+y-axis represents average accuracy, they refer to the curve as the Accuracy Information Curve
+(AIC). When the y-axis is set as the probability of the original prediction, the curve is named the
+Softmax Information Curve (SIC). A higher insetion score indicates a better explanation.
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+18
+Yongjie wang, et al.
+In deletion score (a.k.a., Area over the Perturbation Curve (AOPC)[6, 72, 82]), the goal is to rapidly
+alter the model’s prediction by eliminating important pixels. Some researchers [38, 50, 83] suggest
+replacing the important pixels with their Gaussian-blurred counterparts, rather than using a black
+image [66], to avoid introducing zero values [66] that could lead to distribution shift problems.
+The area under the prediction curve (AUC) in successive deletion is termed the deletion score
+and a lower AUC is better. In AOPC, researchers also propose to perturb pixels based on the
+Least Relevant First (LeRF) order. In addition, Samek et al. [72] introduce the the Area Between
+Perturbation Curves (ABPC) metric, which calculates the area between two curves that remove the
+features in top-ranked and bottom-ranked order, respectively. A higher ABPC score indicates that
+the explanation method aligns more closely with the model’s behavior.
+Remove And Retrain (ROAR) [32]. The deletion score substitutes the top-𝑘 important features
+with uninformative values and assesses the resulting performance degradation. However, it remains
+unclear whether the prediction degradation stems from a distribution shift or informative features
+have been removed. ROAR retrains the model on the substituted data and reports the accuracy
+drop on the test set, wherein the top-𝑘 important features have also been replaced. Retraining
+helps eliminate potential causes stemming from distribution shifts, allowing a focus on the specific
+removal of information. Ideally, an accurate explanation method will identify the most important
+features whose removal will cause a large accuracy drop on the test set. Similar to the deletion
+curve, we can create a plot where the 𝑥 axis represents the number of features removed, and the 𝑦
+axis indicates the performance drop. A lower prediction curve on the plot signifies a more effective
+explanation. However, the drawback of ROAR is the computational burden during model retraining
+especially when successively perturbing top-𝑘 important features.
+3.4
+Randomization Tests
+Adebayo et al. [3] observed that some saliency methods (e.g., Guided backpropagation [81], Guided
+Grad-CAM [74]) are independent of model parameters and data the model trained on. Despite
+their superior performance on aforementioned metrics, these explanation methods cannot effec-
+tively assist users in understanding model behaviors. To address this limitation, they propose two
+randomization tests as outlined below.
+Model parameter randomization test. This test compares saliency maps from a trained model
+with those from a model with the same architecture but initialized randomly. For example, we
+can randomly initialize the weights, or shuffle the trained weights of a layer, and compare the
+differences in saliency maps layer by layer. If the saliency maps are insensitive to model parameters,
+the explanation method would not help to debug the model.
+Data randomization test. This test compares saliency maps from models trained on the original
+dataset with those from models trained on the same dataset but with shuffled annotated labels.
+The saliency maps should have significant differences if the explanation method depends on data
+annotation.
+To quantitatively compare saliency maps before and after the randomization test, the authors
+utilized Spearman rank correlation, structural similarity index (SSIM), and Pearson correlation of
+the histogram of gradients (HoGs).
+4
+RESEARCH CHALLENGES
+After describing the algorithm details and evaluations, our discussion shifts towards the research
+challenges. Initially, we present general challenges inhabited in all feature attribution methods,
+followed by a detailed exploration of specific concerns within gradient based explanations.
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+Gradient based Feature Attribution in Explainable AI: A Technical Review
+19
+4.1
+General Challenges
+The general challenges arise from all feature attribution problems, and addressing these challenges
+will also enhance gradient based explanations.
+Evaluation issues. The major challenge is to evaluate the correctness of explanations stem-
+ming from the following factors: (1) no ground truth. The black-box nature of deep models poses
+challenges in establishing a ground truth for explanations, and even with human annotation, uncer-
+tainties persist regarding whether the model’s functioning aligns with human understanding. (2)
+trade-off between incomparable metrics when evaluating explanations from different perspectives.
+For instance, an explanation method might exhibit high fidelity to the model, but this could come
+at the expense of explainability. (3) The lack of evaluation tasks. Explanation methods are usually
+proposed on the model-agnostic assumption and could be generalized to other instances in broad
+domains. Annotating such a general dataset appears to be an impossible task.
+Algorithmic efficiency. Feature attribution methods typically run on a per-instance basis.
+When dealing with large datasets containing millions of samples or applications with billions
+of user requests, generating and analyzing explanations for each instance imposes a significant
+computational burden. In a recent study, Wang et al. [90] observed that similar users tend to share
+common importance values and they aggregate feature importance vectors of a dataset at a group
+level and only pick up top-𝑘 important features for efficient summarization. For an explanation
+system, we believe that more attention should be paid to providing real-time explanations, and
+efficiently examining historical explanations in the background.
+Feature correlations. Existing feature attribution methods often implicitly assume that features
+are independent of each other., e.g., LIME [70] and IG [84]. However, spatial structures in images
+pose a challenge when assigning importance scores to each feature. For example, a dog in an image
+remains distinguishable even if we remove just one or two pixels in its body. The model may make
+incorrect predictions only when significant portions, like the head and body, are removed. Therefore,
+we should pay attention to the feature interaction and correlation during the explanation. Probably,
+we should consider all pixels that appear in the regions of the target as a whole or disentangle
+correlated features for future directions
+Personalised XAI. Feature attribution methods are often considered complete upon delivering
+explanations to end users [1, 46, 71, 98]. However, given diverse user backgrounds, these one-
+size-fits-all explanations may not fulfill all users’ intentions. For example, medical practitioners
+may require explanations to justify the model’s decisions, whereas data scientists might be more
+interested in understanding the strengths and limitations of the model. This discrepancy underscores
+the necessity for personalized explanations that align with individual user needs. Nevertheless,
+creating such personalized XAI presents significant challenges. First, First, it requires a deep
+and continuous analysis of users’ backgrounds, expertise, and objectives to accurately identify
+their specific requirements. Besides, the trade-off between AI transparency and the explanations’
+complexity should be well-balanced. Overly complex explanations might confuse users rather than
+enlighten them, especially for those without an AI technical background. It’s important to find ways
+to guide users based on their knowledge, enabling them to gradually comprehend the explanations.
+Therefore, it is crucial to provide users with a pathway to gradually understand and engage with
+AI explanations effectively, based on their existing knowledge levels.
+4.2
+Specific Challenges
+Next, we introduce the following challenges limited to gradient based explanations.
+The role of bias. Recent studies [88, 94] discussed the significance of biases on model predictions:
+when the gradient has a small magnitude, the bias term has a larger contribution. Remarkably,
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+20
+Yongjie wang, et al.
+utilizing only the bias term of the local linear model still achieves an accuracy above 30% on the
+CIFAR-100 test set [88]. Bias terms, while independent of input features, exhibit strong connections
+in the forward pass. We take the ReLU (i.e., 𝜙(𝑤𝑥 +𝑏)) as an example: when 𝑤𝑥 +𝑏 is greater than 0,
+the ReLU is activated, allowing 𝑤𝑥 and 𝑏 to propagate to deeper layers. Conversely, when feeding
+an all-zero image to a CNN model, only a few ReLUs are activated, limiting the impact of biases on
+the prediction. Hence, a more in-depth investigation into the influence of bias should be carried
+out.
+Hyperparameter sensitive. The attribution scores could depend on the choice of hyperparam-
+eters, e.g., the baseline point in IG [84], the steps in IDGI [93], the sampling volume 𝑉 in NeFLAG
+[50]. If we select inappropriate hyperparameters, the explanation method may produce inconsis-
+tent, even counter-intuitive explanations. However, the hyperparameter tuning is independent
+of the input instance, merely driven by a higher evaluation score, which lacks clear intuition for
+better explainability. Investigating the hyperparameter-free explanation method or one with clearly
+interpretable hyperparameters should be a focus of future research.
+Lack rigorous proof. Numerous recent studies are built on unproven hypotheses. Taking
+the gradient saturation problem as an example, when the predicted probability is close to 1, the
+gradients has a small magnitude, which motivates the series of integrated gradient based methods.
+Nevertheless, the theoretical connections between noisy visualization and smaller gradients remain
+unknown, and the reasons why accumulated gradients can eliminate noise and identify important
+features lack adequate justification. While numerous integrated gradient based methods satisfy
+certain desired properties, it is crucial to note that these properties are necessary but insufficient
+for establishing connections between the attribution scores and the final prediction [7]. Therefore,
+more attention should be devoted to exploring and discovering both empirical and theoretical
+evidence to substantiate the hypotheses underlying these methods, rather than directly building
+algorithms solely based on these hypotheses.
+Model security and privacy. When offering explanations to end users to elucidate the predic-
+tion logic, it unavoidably exposes the model to various potential attacks [57, 89]. For instance, in the
+case of a linear model, the gradients are equivalent to the model weights. If we provide gradients
+as explanations, it’s akin to disclosing the internal structure of the model. In [57], Milli et al. theo-
+retically and empirically prove that extracting the model from gradients is the order of magnitude
+more efficient than extracting it from the prediction interface. Given the substantial investment in
+model development, safeguarding models in XAI should receive considerable attention.
+Fragility of explanations. Recent research [20, 87] demonstrates that explanations are also
+vulnerable to adversarial attacks. For instance, perturbing certain pixels where there is a percep-
+tually indistinguishable difference in input and model prediction also remains the same, can lead
+explanation methods to produce dramatically different saliency maps. The fragility of explanations
+raises significant security concerns for explanation methods especially when attackers manipulate
+input features to jeopardize the credibility of an explanation method. Ghorbani et al. points out
+that the fragility derives from the high dimensionality and non-linearity of neural networks, but
+addressing this issue remains an unsolved challenge. Therefore, developing robust explanation
+methods and implementing countermeasures to audit adversarial attacks should be a focal point in
+deployment.
+5
+CONCLUSION
+XAI research has seen a surge recently. Despite the abundance of surveys in the XAI field, many
+of them aim to cover all facets of XAI research, providing only provide only brief introductions
+to gradient based feature attribution methods with limited depth. A comprehensive overview of
+algorithmic breakthroughs of gradient based explanations remains largely unexplored. In this paper,
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+Gradient based Feature Attribution in Explainable AI: A Technical Review
+21
+we systematically review recent approaches, categorizing gradient based explanations into four
+groups. Subsequently, we introduce representative algorithms within each group, elucidating their
+motivation and how they address previous weaknesses. Furthermore, we illustrate commonly used
+evaluation metrics for comparing various explanations. Most importantly, we discuss several general
+challenges in feature attribution methods and specific challenges in gradients-based explanations.
+We believe that our research will provide a comprehensive understanding to AI researchers and
+further motivate advanced research in the realm of gradient based explanations.
+REFERENCES
+[1] Ashraf Abdul, Jo Vermeulen, Danding Wang, Brian Y. Lim, and Mohan Kankanhalli. 2018. Trends and Trajectories for
+Explainable, Accountable and Intelligible Systems: An HCI Research Agenda. In Proceedings of the 2018 CHI Conference
+on Human Factors in Computing Systems. 1–18.
+[2] Amina Adadi and Mohammed Berrada. 2018. Peeking inside the black-box: A survey on Explainable Artificial
+Intelligence (XAI). IEEE Access 6 (2018), 52138–52160.
+[3] Julius Adebayo, Justin Gilmer, Michael Muelly, Ian Goodfellow, Moritz Hardt, and Been Kim. 2018. Sanity checks for
+saliency maps. In Advances in Neural Information Processing Systems. 9505–9515.
+[4] Marco Ancona, Enea Ceolini, Cengiz Öztireli, and Markus Gross. 2017. Towards better understanding of gradient-based
+attribution methods for deep neural networks. arXiv preprint arXiv:1711.06104 (2017).
+[5] Alejandro Barredo Arrieta, Natalia Díaz-Rodríguez, Javier Del Ser, Adrien Bennetot, Siham Tabik, Alberto Barbado,
+Salvador García, Sergio Gil-López, Daniel Molina, Richard Benjamins, et al. 2020. Explainable Artificial Intelligence
+(XAI): Concepts, taxonomies, opportunities and challenges toward responsible AI. Information Fusion 58 (2020),
+82–115.
+[6] Sebastian Bach, Alexander Binder, Grégoire Montavon, Frederick Klauschen, Klaus-Robert Müller, and Wojciech
+Samek. 2015. On pixel-wise explanations for non-linear classifier decisions by layer-wise relevance propagation. PloS
+one 10, 7 (2015).
+[7] Blair Bilodeau, Natasha Jaques, Pang Wei Koh, and Been Kim. 2024. Impossibility theorems for feature attribution.
+Proceedings of the National Academy of Sciences 121, 2 (2024), e2304406120. https://doi.org/10.1073/pnas.2304406120
+arXiv:https://www.pnas.org/doi/pdf/10.1073/pnas.2304406120
+[8] Alexander Binder, Grégoire Montavon, Sebastian Lapuschkin, Klaus-Robert Müller, and Wojciech Samek. 2016. Layer-
+wise relevance propagation for neural networks with local renormalization layers. In International Conference on
+Artificial Neural Networks. Springer, 63–71.
+[9] Konstantinos Bousmalis, Giulia Vezzani, Dushyant Rao, Coline Devin, Alex X Lee, Maria Bauza, Todor Davchev,
+Yuxiang Zhou, Agrim Gupta, Akhil Raju, et al. 2023. RoboCat: A Self-Improving Foundation Agent for Robotic
+Manipulation. arXiv preprint arXiv:2306.11706 (2023).
+[10] Tom B Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared Kaplan, Prafulla Dhariwal, Arvind Neelakantan,
+Pranav Shyam, Girish Sastry, Amanda Askell, et al. 2020. Language models are few-shot learners. arXiv preprint
+arXiv:2005.14165 (2020).
+[11] Diogo V Carvalho, Eduardo M Pereira, and Jaime S Cardoso. 2019. Machine learning interpretability: A survey on
+methods and metrics. Electronics 8, 8 (2019), 832.
+[12] Aditya Chattopadhay, Anirban Sarkar, Prantik Howlader, and Vineeth N Balasubramanian. 2018. Grad-cam++:
+Generalized gradient-based visual explanations for deep convolutional networks. In 2018 IEEE winter conference on
+applications of computer vision (WACV). IEEE, 839–847.
+[13] Amit Dhurandhar, Karthikeyan Shanmugam, Ronny Luss, and Peder A Olsen. 2018. Improving simple models with
+confidence profiles. Advances in Neural Information Processing Systems 31 (2018).
+[14] Filip Karlo Došilović, Mario Brčić, and Nikica Hlupić. 2018. Explainable artificial intelligence: A survey. In 2018 41st
+International convention on information and communication technology, electronics and microelectronics (MIPRO). IEEE,
+0210–0215.
+[15] M. Everingham, S. M. A. Eslami, L. Van Gool, C. K. I. Williams, J. Winn, and A. Zisserman. 2015. The Pascal Visual
+Object Classes Challenge: A Retrospective. International Journal of Computer Vision 111, 1 (Jan. 2015), 98–136.
+[16] Ruth Fong, Mandela Patrick, and Andrea Vedaldi. 2019. Understanding deep networks via extremal perturbations and
+smooth masks. In Proceedings of the IEEE/CVF international conference on computer vision. 2950–2958.
+[17] Ruth C Fong and Andrea Vedaldi. 2017. Interpretable explanations of black boxes by meaningful perturbation. In
+Proceedings of the IEEE international conference on computer vision. 3429–3437.
+[18] Jerome H Friedman. 2001. Greedy function approximation: a gradient boosting machine. Annals of statistics (2001),
+1189–1232.
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+22
+Yongjie wang, et al.
+[19] Muriel Gevrey, Ioannis Dimopoulos, and Sovan Lek. 2003. Review and comparison of methods to study the contribution
+of variables in artificial neural network models. Ecological modelling 160, 3 (2003), 249–264.
+[20] Amirata Ghorbani, Abubakar Abid, and James Zou. 2019. Interpretation of neural networks is fragile. In Proceedings
+of the AAAI Conference on Artificial Intelligence, Vol. 33. 3681–3688.
+[21] Leilani H Gilpin, David Bau, Ben Z Yuan, Ayesha Bajwa, Michael Specter, and Lalana Kagal. 2018. Explaining
+explanations: An overview of interpretability of machine learning. In 2018 IEEE 5th International Conference on data
+science and advanced analytics (DSAA). IEEE, 80–89.
+[22] Xavier Glorot, Antoine Bordes, and Yoshua Bengio. 2011. Deep sparse rectifier neural networks. In Proceedings of the
+fourteenth international conference on artificial intelligence and statistics. JMLR Workshop and Conference Proceedings,
+315–323.
+[23] Alex Goldstein, Adam Kapelner, Justin Bleich, and Emil Pitkin. 2015. Peeking inside the black box: Visualizing
+statistical learning with plots of individual conditional expectation. journal of Computational and Graphical Statistics
+24, 1 (2015), 44–65.
+[24] Jindong Gu, Yinchong Yang, and Volker Tresp. 2019. Understanding individual decisions of cnns via contrastive
+backpropagation. In Computer Vision–ACCV 2018: 14th Asian Conference on Computer Vision, Perth, Australia, December
+2–6, 2018, Revised Selected Papers, Part III 14. Springer, 119–134.
+[25] Riccardo Guidotti, Anna Monreale, Salvatore Ruggieri, Dino Pedreschi, Franco Turini, and Fosca Giannotti. 2018.
+Local rule-based explanations of black box decision systems. arXiv preprint arXiv:1805.10820 (2018).
+[26] Riccardo Guidotti, Anna Monreale, Salvatore Ruggieri, Franco Turini, Fosca Giannotti, and Dino Pedreschi. 2018. A
+survey of methods for explaining black box models. ACM computing surveys (CSUR) 51, 5 (2018), 1–42.
+[27] Kotaro Hara, Abigail Adams, Kristy Milland, Saiph Savage, Chris Callison-Burch, and Jeffrey P. Bigham. 2018. A
+Data-Driven Analysis of Workers’ Earnings on Amazon Mechanical Turk. In Proceedings of the 2018 CHI Conference
+on Human Factors in Computing Systems (CHI ’18). Association for Computing Machinery, New York, NY, USA, 1–14.
+https://doi.org/10.1145/3173574.3174023
+[28] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. 2016. Deep residual learning for image recognition. In
+Proceedings of the IEEE conference on computer vision and pattern recognition. 770–778.
+[29] Robin Hesse, Simone Schaub-Meyer, and Stefan Roth. 2021. Fast axiomatic attribution for neural networks. Advances
+in Neural Information Processing Systems 34 (2021), 19513–19524.
+[30] Fred Hohman, Minsuk Kahng, Robert Pienta, and Duen Horng Chau. 2018. Visual analytics in deep learning: An
+interrogative survey for the next frontiers. IEEE transactions on visualization and computer graphics 25, 8 (2018),
+2674–2693.
+[31] Robert C Holte. 1993. Very simple classification rules perform well on most commonly used datasets. Machine
+learning 11, 1 (1993), 63–90.
+[32] Sara Hooker, Dumitru Erhan, Pieter-Jan Kindermans, and Been Kim. 2019. A benchmark for interpretability methods
+in deep neural networks. In Advances in Neural Information Processing Systems. 9737–9748.
+[33] Brian Kenji Iwana, Ryohei Kuroki, and Seiichi Uchida. 2019. Explaining Convolutional Neural Networks using
+Softmax Gradient Layer-wise Relevance Propagation. In 2019 IEEE/CVF International Conference on Computer Vision
+Workshop (ICCVW). 4176–4185. https://doi.org/10.1109/ICCVW.2019.00513
+[34] Joseph D Janizek, Pascal Sturmfels, and Su-In Lee. 2021. Explaining explanations: Axiomatic feature interactions for
+deep networks. The Journal of Machine Learning Research 22, 1 (2021), 4687–4740.
+[35] Lauren Kirchner Jeff Larson, Surya Mattu and Julia Angwin. 2016. How We Analyzed the COMPAS Recidivism
+Algorithm. https://www.propublica.org/article/how-we-analyzed-the-compas-recidivism-algorithm
+[36] John Jumper, Richard Evans, Alexander Pritzel, Tim Green, Michael Figurnov, Olaf Ronneberger, Kathryn Tunyasuvu-
+nakool, Russ Bates, Augustin Žídek, Anna Potapenko, et al. 2021. Highly accurate protein structure prediction with
+AlphaFold. Nature 596, 7873 (2021), 583–589.
+[37] Hyungsik Jung and Youngrock Oh. 2021. Towards better explanations of class activation mapping. In Proceedings of
+the IEEE/CVF International Conference on Computer Vision. 1336–1344.
+[38] Andrei Kapishnikov, Tolga Bolukbasi, Fernanda Viégas, and Michael Terry. 2019. XRAI: Better Attributions Through
+Regions. In Proceedings of the IEEE International Conference on Computer Vision. 4948–4957.
+[39] Andrei Kapishnikov, Subhashini Venugopalan, Besim Avci, Ben Wedin, Michael Terry, and Tolga Bolukbasi. 2021.
+Guided integrated gradients: An adaptive path method for removing noise. In Proceedings of the IEEE/CVF conference
+on computer vision and pattern recognition. 5050–5058.
+[40] Beomsu Kim, Junghoon Seo, Seunghyeon Jeon, Jamyoung Koo, Jeongyeol Choe, and Taegyun Jeon. 2019. Why are
+saliency maps noisy? cause of and solution to noisy saliency maps. In 2019 IEEE/CVF International Conference on
+Computer Vision Workshop (ICCVW). IEEE, 4149–4157.
+[41] Been Kim, Martin Wattenberg, Justin Gilmer, Carrie Cai, James Wexler, Fernanda Viegas, et al. 2018. Interpretability
+beyond feature attribution: Quantitative testing with concept activation vectors (tcav). In International conference on
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+Gradient based Feature Attribution in Explainable AI: A Technical Review
+23
+machine learning. PMLR, 2668–2677.
+[42] Ramaravind Kommiya Mothilal, Divyat Mahajan, Chenhao Tan, and Amit Sharma. 2021. Towards unifying feature
+attribution and counterfactual explanations: Different means to the same end. In Proceedings of the 2021 AAAI/ACM
+Conference on AI, Ethics, and Society. 652–663.
+[43] Alex Krizhevsky, Ilya Sutskever, and Geoffrey E Hinton. 2012. Imagenet classification with deep convolutional neural
+networks. In Advances in neural information processing systems. 1097–1105.
+[44] V KURKOVA and PC KAINEN. 1994. Functionally equivalent feedforward neural networks. Neural computation 6, 3
+(1994), 543–558.
+[45] Himabindu Lakkaraju, Ece Kamar, Rich Caruana, and Jure Leskovec. 2019. Faithful and customizable explanations of
+black box models. In Proceedings of the 2019 AAAI/ACM Conference on AI, Ethics, and Society. 131–138.
+[46] Himabindu Lakkaraju, Dylan Slack, Yuxin Chen, Chenhao Tan, and Sameer Singh. 2022. Rethinking Explainability as
+a Dialogue: A Practitioner’s Perspective. arXiv preprint arXiv:2202.01875 (2022).
+[47] Ian Lenz, Honglak Lee, and Ashutosh Saxena. 2015. Deep learning for detecting robotic grasps. The International
+Journal of Robotics Research 34, 4-5 (2015), 705–724.
+[48] Miguel Lerma and Mirtha Lucas. 2021.
+Symmetry-preserving paths in integrated gradients.
+arXiv preprint
+arXiv:2103.13533 (2021).
+[49] Jiwei Li, Xinlei Chen, Eduard Hovy, and Dan Jurafsky. 2016. Visualizing and Understanding Neural Models in NLP. In
+Proceedings of the 2016 Conference of the North American Chapter of the Association for Computational Linguistics:
+Human Language Technologies, Kevin Knight, Ani Nenkova, and Owen Rambow (Eds.). Association for Computational
+Linguistics, San Diego, California, 681–691. https://doi.org/10.18653/v1/N16-1082
+[50] Xin Li, Deng Pan, Chengyin Li, Yao Qiang, and Dongxiao Zhu. 2023. Negative Flux Aggregation to Estimate Feature
+Attributions. In Proceedings of the Thirty-Second International Joint Conference on Artificial Intelligence, IJCAI 2023,
+19th-25th August 2023, Macao, SAR, China. ijcai.org, 446–454. https://doi.org/10.24963/IJCAI.2023/50
+[51] Yu Liang, Siguang Li, Chungang Yan, Maozhen Li, and Changjun Jiang. 2021. Explaining the black-box model: A
+survey of local interpretation methods for deep neural networks. Neurocomputing 419 (2021), 168–182.
+[52] Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Dollár, and C Lawrence
+Zitnick. 2014. Microsoft coco: Common objects in context. In Computer Vision–ECCV 2014: 13th European Conference,
+Zurich, Switzerland, September 6-12, 2014, Proceedings, Part V 13. Springer, 740–755.
+[53] Yinhan Liu, Myle Ott, Naman Goyal, Jingfei Du, Mandar Joshi, Danqi Chen, Omer Levy, Mike Lewis, Luke Zettlemoyer,
+and Veselin Stoyanov. 2019. Roberta: A robustly optimized bert pretraining approach. arXiv preprint arXiv:1907.11692
+(2019).
+[54] Ze Liu, Han Hu, Yutong Lin, Zhuliang Yao, Zhenda Xie, Yixuan Wei, Jia Ning, Yue Cao, Zheng Zhang, Li Dong, et al.
+2022. Swin transformer v2: Scaling up capacity and resolution. In Proceedings of the IEEE/CVF conference on computer
+vision and pattern recognition. 12009–12019.
+[55] Aravindh Mahendran and Andrea Vedaldi. 2016. Salient deconvolutional networks. In Computer Vision–ECCV 2016:
+14th European Conference, Amsterdam, The Netherlands, October 11-14, 2016, Proceedings, Part VI 14. Springer, 120–135.
+[56] Vivek Miglani, Narine Kokhlikyan, Bilal Alsallakh, Miguel Martin, and Orion Reblitz-Richardson. 2020. Investigating
+saturation effects in integrated gradients. arXiv preprint arXiv:2010.12697 (2020).
+[57] Smitha Milli, Ludwig Schmidt, Anca D. Dragan, and Moritz Hardt. 2019. Model Reconstruction from Model Expla-
+nations. In Proceedings of the Conference on Fairness, Accountability, and Transparency (FAT* ’19). Association for
+Computing Machinery, New York, NY, USA, 1–9. https://doi.org/10.1145/3287560.3287562
+[58] Christoph Molnar. 2020. Interpretable Machine Learning. Lulu. com.
+[59] Grégoire Montavon, Alexander Binder, Sebastian Lapuschkin, Wojciech Samek, and Klaus-Robert Müller. 2019. Layer-
+wise relevance propagation: an overview. In Explainable AI: interpreting, explaining and visualizing deep learning.
+Springer, 193–209.
+[60] Grégoire Montavon, Sebastian Lapuschkin, Alexander Binder, Wojciech Samek, and Klaus-Robert Müller. 2017.
+Explaining nonlinear classification decisions with deep taylor decomposition. Pattern Recognition 65 (2017), 211–222.
+[61] Woo-Jeoung Nam, Jaesik Choi, and Seong-Whan Lee. 2021. Interpreting deep neural networks with relative sectional
+propagation by analyzing comparative gradients and hostile activations. In Proceedings of the AAAI Conference on
+Artificial Intelligence, Vol. 35. 11604–11612.
+[62] Menaka Narayanan, Emily Chen, Jeffrey He, Been Kim, Sam Gershman, and Finale Doshi-Velez. 2018. How do humans
+understand explanations from machine learning systems? an evaluation of the human-interpretability of explanation.
+arXiv preprint arXiv:1802.00682 (2018).
+[63] Daniel Omeiza, Skyler Speakman, Celia Cintas, and Komminist Weldermariam. 2019. Smooth grad-cam++: An
+enhanced inference level visualization technique for deep convolutional neural network models. arXiv preprint
+arXiv:1908.01224 (2019).
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+24
+Yongjie wang, et al.
+[64] Maxime Oquab, Léon Bottou, Ivan Laptev, and Josef Sivic. 2015. Is object localization for free?-weakly-supervised
+learning with convolutional neural networks. In Proceedings of the IEEE conference on computer vision and pattern
+recognition. 685–694.
+[65] Deng Pan, Xin Li, and Dongxiao Zhu. 2021. Explaining deep neural network models with adversarial gradient
+integration. In Thirtieth International Joint Conference on Artificial Intelligence (IJCAI).
+[66] Vitali Petsiuk, Abir Das, and Kate Saenko. 2018. RISE: Randomized Input Sampling for Explanation of Black-box
+Models. In Proceedings of the British Machine Vision Conference (BMVC).
+[67] Phillip E. Pope, Soheil Kolouri, Mohammad Rostami, Charles E. Martin, and Heiko Hoffmann. 2019. Explainability
+Methods for Graph Convolutional Neural Networks. In Proceedings of the IEEE/CVF Conference on Computer Vision
+and Pattern Recognition (CVPR).
+[68] Zhongang Qi, Saeed Khorram, and Fuxin Li. 2019. Visualizing Deep Networks by Optimizing with Integrated
+Gradients.. In CVPR Workshops, Vol. 2. 1–4.
+[69] J. Ross Quinlan. 1986. Induction of decision trees. Machine learning 1, 1 (1986), 81–106.
+[70] Marco Tulio Ribeiro, Sameer Singh, and Carlos Guestrin. 2016. " Why should i trust you?" Explaining the predictions
+of any classifier. In Proceedings of the 22nd ACM SIGKDD international conference on knowledge discovery and data
+mining. 1135–1144.
+[71] Katharina J Rohlfing, Philipp Cimiano, Ingrid Scharlau, Tobias Matzner, Heike M Buhl, Hendrik Buschmeier, Elena
+Esposito, Angela Grimminger, Barbara Hammer, Reinhold Häb-Umbach, et al. 2020. Explanation as a social practice:
+Toward a conceptual framework for the social design of AI systems. IEEE Transactions on Cognitive and Developmental
+Systems 13, 3 (2020), 717–728.
+[72] Wojciech Samek, Alexander Binder, Grégoire Montavon, Sebastian Lapuschkin, and Klaus-Robert Müller. 2016.
+Evaluating the visualization of what a deep neural network has learned. IEEE transactions on neural networks and
+learning systems 28, 11 (2016), 2660–2673.
+[73] Wojciech Samek, Thomas Wiegand, and Klaus-Robert Müller. 2017. Explainable artificial intelligence: Understanding,
+visualizing and interpreting deep learning models. arXiv preprint arXiv:1708.08296 (2017).
+[74] Ramprasaath R Selvaraju, Michael Cogswell, Abhishek Das, Ramakrishna Vedantam, Devi Parikh, and Dhruv Batra.
+2017. Grad-cam: Visual explanations from deep networks via gradient-based localization. In Proceedings of the IEEE
+international conference on computer vision. 618–626.
+[75] Andrew W Senior, Richard Evans, John Jumper, James Kirkpatrick, Laurent Sifre, Tim Green, Chongli Qin, Augustin
+Žídek, Alexander WR Nelson, Alex Bridgland, et al. 2020. Improved protein structure prediction using potentials
+from deep learning. Nature 577, 7792 (2020), 706–710.
+[76] Junghoon Seo, Jeongyeol Choe, Jamyoung Koo, Seunghyeon Jeon, Beomsu Kim, and Taegyun Jeon. 2018. Noise-adding
+methods of saliency map as series of higher order partial derivative. arXiv preprint arXiv:1806.03000 (2018).
+[77] Avanti Shrikumar, Peyton Greenside, and Anshul Kundaje. 2017. Learning important features through propagating
+activation differences. In International conference on machine learning. PMLR, 3145–3153.
+[78] Sandipan Sikdar, Parantapa Bhattacharya, and Kieran Heese. 2021. Integrated directional gradients: Feature interaction
+attribution for neural NLP models. In Proceedings of the 59th Annual Meeting of the Association for Computational
+Linguistics and the 11th International Joint Conference on Natural Language Processing (Volume 1: Long Papers). 865–878.
+[79] K Simonyan, A Vedaldi, and A Zisserman. 2014. Deep inside convolutional networks: visualising image classification
+models and saliency maps. In Proceedings of the International Conference on Learning Representations (ICLR). ICLR.
+[80] Daniel Smilkov, Nikhil Thorat, Been Kim, Fernanda Viégas, and Martin Wattenberg. 2017. Smoothgrad: removing
+noise by adding noise. arXiv preprint arXiv:1706.03825 (2017).
+[81] Jost Tobias Springenberg, Alexey Dosovitskiy, Thomas Brox, and Martin Riedmiller. 2014. Striving for simplicity: The
+all convolutional net. arXiv preprint arXiv:1412.6806 (2014).
+[82] Suraj Srinivas and François Fleuret. 2019. Full-gradient representation for neural network visualization. In Advances
+in Neural Information Processing Systems. 4126–4135.
+[83] Pascal Sturmfels, Scott Lundberg, and Su-In Lee. 2020. Visualizing the impact of feature attribution baselines. Distill
+5, 1 (2020), e22.
+[84] Mukund Sundararajan, Ankur Taly, and Qiqi Yan. 2017. Axiomatic attribution for deep networks. In Proceedings of
+the 34th International Conference on Machine Learning-Volume 70. JMLR. org, 3319–3328.
+[85] Erico Tjoa and Cuntai Guan. 2019. A survey on explainable artificial intelligence (XAI): towards medical XAI. arXiv
+preprint arXiv:1907.07374 (2019).
+[86] Haofan Wang, Zifan Wang, Mengnan Du, Fan Yang, Zijian Zhang, Sirui Ding, Piotr Mardziel, and Xia Hu. 2020.
+Score-CAM: Score-Weighted Visual Explanations for Convolutional Neural Networks. In Proceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition (CVPR) Workshops.
+[87] Junlin Wang, Jens Tuyls, Eric Wallace, and Sameer Singh. 2020. Gradient-based Analysis of NLP Models is Manipulable.
+In Findings of the Association for Computational Linguistics: EMNLP 2020. 247–258.
+, Vol. 1, No. 1, Article . Publication date: March 2024.
+Gradient based Feature Attribution in Explainable AI: A Technical Review
+25
+[88] Shengjie Wang, Tianyi Zhou, and Jeff Bilmes. 2019. Bias also matters: Bias attribution for deep neural network
+explanation. In International Conference on Machine Learning. PMLR, 6659–6667.
+[89] Yongjie Wang, Hangwei Qian, and Chunyan Miao. 2022. DualCF: Efficient Model Extraction Attack from Counterfac-
+tual Explanations. In Proceedings of the 2022 ACM Conference on Fairness, Accountability, and Transparency (FAccT ’22).
+Association for Computing Machinery, New York, NY, USA, 1318–1329. https://doi.org/10.1145/3531146.3533188
+[90] Yongjie Wang, Ke Wang, Cheng Long, and Chunyan Miao. 2023. Summarizing user-item matrix by group utility
+maximization. ACM Transactions on Knowledge Discovery from Data 17, 6 (2023), 1–22.
+[91] Zifan Wang, Matt Fredrikson, and Anupam Datta. 2022. Robust Models Are More Interpretable Because Attributions
+Look Normal. In International Conference on Machine Learning. PMLR, 22625–22651.
+[92] Shawn Xu, Subhashini Venugopalan, and Mukund Sundararajan. 2020. Attribution in scale and space. In Proceedings
+of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. 9680–9689.
+[93] Ruo Yang, Binghui Wang, and Mustafa Bilgic. 2023. IDGI: A Framework to Eliminate Explanation Noise from Integrated
+Gradients. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. 23725–23734.
+[94] Elad Ben Zaken, Yoav Goldberg, and Shauli Ravfogel. 2022. BitFit: Simple Parameter-efficient Fine-tuning for
+Transformer-based Masked Language-models. In Proceedings of the 60th Annual Meeting of the Association for
+Computational Linguistics (Volume 2: Short Papers). 1–9.
+[95] Matthew D Zeiler and Rob Fergus. 2014. Visualizing and understanding convolutional networks. In European
+conference on computer vision. Springer, 818–833.
+[96] Jianming Zhang, Sarah Adel Bargal, Zhe Lin, Jonathan Brandt, Xiaohui Shen, and Stan Sclaroff. 2018. Top-down
+neural attention by excitation backprop. International Journal of Computer Vision 126, 10 (2018), 1084–1102.
+[97] Tong Zhang, Yong Liu, Boyang Li, Zhiwei Zeng, Pengwei Wang, Yuan You, Chunyan Miao, and Lizhen Cui. 2022.
+History-Aware Hierarchical Transformer for Multi-session Open-domain Dialogue System. In Findings of the Associa-
+tion for Computational Linguistics: EMNLP 2022, Yoav Goldberg, Zornitsa Kozareva, and Yue Zhang (Eds.). Association
+for Computational Linguistics, Abu Dhabi, United Arab Emirates, 3395–3407.
+https://doi.org/10.18653/v1/2022.
+findings-emnlp.247
+[98] Tong Zhang, X Jessie Yang, and Boyang Li. 2023. May I Ask a Follow-up Question? Understanding the Benefits of
+Conversations in Neural Network Explainability. arXiv preprint arXiv:2309.13965 (2023).
+[99] Bolei Zhou, Aditya Khosla, Agata Lapedriza, Aude Oliva, and Antonio Torralba. 2014. Object detectors emerge in
+deep scene cnns. arXiv preprint arXiv:1412.6856 (2014).
+[100] Bolei Zhou, Aditya Khosla, Agata Lapedriza, Aude Oliva, and Antonio Torralba. 2016. Learning deep features for
+discriminative localization. In Proceedings of the IEEE conference on computer vision and pattern recognition. 2921–2929.
+, Vol. 1, No. 1, Article . Publication date: March 2024.
