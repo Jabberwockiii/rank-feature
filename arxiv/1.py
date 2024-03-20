@@ -10,19 +10,20 @@ def crawl_website(url):
         # Find all the paper elements
         paper_elements = page.query_selector_all('p.list-title.is-inline-block')
 
+        # Find all the abstract elements
+        abstract_elements = page.query_selector_all('.abstract-full')
+
         papers = []
 
-        for paper_element in paper_elements:
+        for i, paper_element in enumerate(paper_elements):
             # Extract the paper ID and URL
             paper_link = paper_element.query_selector('a')
             paper_url = paper_link.get_attribute('href')
             paper_id = paper_url.split('/')[-1]
 
-            # Find the corresponding abstract element
-            abstract_element = paper_element.query_selector('following-sibling::span.abstract-full.has-text-grey-dark.mathjax')
-
-            if abstract_element:
-                abstract_text = abstract_element.inner_text()
+            # Get the corresponding abstract element
+            if i < len(abstract_elements):
+                abstract_text = abstract_elements[i].inner_text()
             else:
                 abstract_text = ''
 
@@ -54,7 +55,8 @@ def main():
         all_papers.extend(page_papers)
         start_index += 25
 
-        with open('arxiv_badcase.json', 'w') as file:
+    # Dump the papers data into a JSON file
+        with open('papers.json', 'w') as file:
             json.dump(all_papers, file, indent=2)
 
     print(f'Scraped {len(all_papers)} papers and saved to papers.json')
