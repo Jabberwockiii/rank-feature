@@ -56,7 +56,7 @@ with ThreadPoolExecutor() as executor:
         if result:
             new_links.append(result)
             print("Running")
-        with open('paper_ids.json', 'w') as f:
+        with open('paper_ids-parallel.json', 'w') as f:
             json.dump(new_links, f, indent=4)
 
 # Dump the paper IDs to a new JSON file

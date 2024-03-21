@@ -21,19 +21,19 @@ def extract_abstract(url, paper_id, retry_count=3, retry_delay=5):
                 page = browser.new_page()
                 page.goto(url, timeout=30000)  # Set a timeout of 30 seconds
                 abstract = page.query_selector('p').inner_text()
-                # date = page.query_selector('div.dateline').inner_text()
-                # authors = page.query_selector('div.authors').inner_text()
-                # title = page.query_selector('h1').inner_text()
-                # print(authors)
-                # print(date)
-                # print(authors)
-                #<div class="authors"><span class="descriptor">Authors:</span><a href="https://arxiv.org/search/cs?searchtype=author&amp;query=Capogrosso,+L">Luigi Capogrosso</a>, <a href="https://arxiv.org/search/cs?searchtype=author&amp;query=Cunico,+F">Federico Cunico</a>, <a href="https://arxiv.org/search/cs?searchtype=author&amp;query=Cheng,+D+S">Dong Seon Cheng</a>, <a href="https://arxiv.org/search/cs?searchtype=author&amp;query=Fummi,+F">Franco Fummi</a>, <a href="https://arxiv.org/search/cs?searchtype=author&amp;query=Cristani,+M">Marco Cristani</a></div>
-                #<span class="descriptor">Authors:</span>
-                #         Thu, 21 Sep 2023 09:47:12 UTC (2,214 KB)
-                # <div class="dateline">
-                # [Submitted on 21 Sep 2023 (<a href="https://arxiv.org/abs/2309.11932v1">v1</a>), last revised 26 Sep 2023 (this version, v2)]</div>
+                title = page.query_selector('h1').inner_text()
+
+                # Extract authors
+                author_elements = page.query_selector_all('div.relative span.inline-block span.contents a')
+                authors = [element.inner_text() for element in author_elements]
+
+                # Extract date
+                date_element = page.query_selector('div.mb-6.flex.flex-wrap.items-center.gap-x-2.text-sm.text-gray-500.sm\\:text-base.md\\:mb-8 div')
+                date = date_element.inner_text() if date_element else ''
+                date = date[13:]
+                # convert the date to date object
                 browser.close()
-                return abstract
+                return abstract, title, authors, date
         except (TimeoutError, Error) as e:
             print(f"Error occurred: {str(e)}")
             if attempt < retry_count - 1:
@@ -58,14 +58,13 @@ for file in json_files:
             if match:
                 paper_id = match.group(1)
                 target_url = f"https://huggingface.co/papers/{paper_id}"
-                abstract = extract_abstract(target_url, paper_id)
+                abstract, title, authors, date = extract_abstract(target_url, paper_id)
                  
                 # Extract the abstract for the paper
-                new_links.append({'url': target_url, 'paper_id': paper_id, 'abstract': abstract})
+                new_links.append({'url': target_url, 'paper_id': paper_id, 'abstract': abstract, 'title': title, 'authors': authors, 'date': date})
                 print("running")
 
-# Dump the paper IDs to a new JSON file
-with open('paper_ids.json', 'w') as f:
-    json.dump(paper_ids, f, indent=4)
+                with open('goodcase-single.json', 'w') as f:
+                    json.dump(new_links, f, indent=4)
 
 print("Paper IDs extracted and dumped to 'paper_ids.json' successfully.")
