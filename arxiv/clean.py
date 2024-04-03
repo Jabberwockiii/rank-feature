@@ -13,7 +13,7 @@ def strip_escapes(abstract):
     return abstract
 
 # Read the JSON file
-with open('papers.json', 'r') as file:
+with open('badcase-full-41-s.json', 'r') as file:
     json_data = file.read()
 
 # Parse the JSON string into a list of dictionaries
@@ -25,7 +25,7 @@ for item in data:
     item['abstract'] = strip_escapes(item['abstract'])
 
 # Write the updated data to a new JSON file
-with open('badcase-large.json', 'w') as file:
+with open('badcase-large-full41.json', 'w') as file:
     json.dump(data, file, indent=4)
 
 print("New JSON file 'output.json' created with stripped data.")
